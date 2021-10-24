@@ -1,0 +1,182 @@
+allprojects {
+    apply plugin: "java"
+    apply plugin: "jacoco"
+    apply plugin: 'org.sonarqube'
+    sourceCompatibility = JavaVersion.VERSION_11
+
+    repositories {
+        mavenCentral()
+    }
+
+    sonarqube {
+        properties {
+            property "sonar.sourceEncoding", "UTF-8"
+            property "sonar.projectKey", "bancolombia_data-mask"
+            property "sonar.organization", "grupo-bancolombia"
+            property "sonar.host.url", "https://sonarcloud.io/"
+            property "sonar.sources", "src/main"
+            property "sonar.test", "src/test"
+            property "sonar.java.binaries", "build/classes"
+            property "sonar.junit.reportPaths", "build/test-results/test"
+            property "sonar.java-coveragePlugin", "jacoco"
+            property "sonar.coverage.jacoco.xmlReportPaths", "${rootDir}/build/reports/jacoco/generateMergedReport/generateMergedReport.xml"
+            property "sonar.exclusions", ".github/**"
+            property 'sonar.coverage.exclusions', 'examples/**/*'
+        }
+    }
+}
+
+subprojects {
+
+    apply plugin: "java-library"
+    apply plugin: "io.spring.dependency-management"
+
+    ext {
+        groupId = 'com.github.bancolombia'
+    }
+
+    group groupId
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+        testAnnotationProcessor 'org.projectlombok:lombok'
+        testCompileOnly 'org.projectlombok:lombok'
+        testImplementation 'io.projectreactor:reactor-test'
+        testImplementation(platform('org.junit:junit-bom:5.7.0'))
+        testImplementation('org.junit.jupiter:junit-jupiter')
+        testImplementation 'org.mockito:mockito-inline:3.7.7'
+        testImplementation 'org.mockito:mockito-junit-jupiter:3.7.7'
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+        }
+    }
+
+    test {
+        useJUnitPlatform()
+        testLogging {
+            events "passed", "skipped", "failed"
+        }
+    }
+
+    test.finalizedBy(project.tasks.jacocoTestReport)
+
+    jacocoTestReport {
+        dependsOn test
+        reports {
+            xml.enabled true
+            xml.destination file("${buildDir}/reports/jacoco.xml")
+            csv.enabled false
+            html.destination file("${buildDir}/reports/jacocoHtml")
+        }
+    }
+    compileJava {
+        options.compilerArgs = [
+                '-Amapstruct.suppressGeneratorTimestamp=true',
+                '-Amapstruct.suppressGeneratorVersionInfoComment=true'
+        ]
+    }
+
+    if (toPublish.split(',').contains(it.name)) {
+        apply plugin: "maven-publish"
+        apply plugin: "signing"
+
+        task sourcesJar(type: Jar, dependsOn: classes) {
+            classifier = 'sources'
+            from sourceSets.main.allSource
+        }
+
+        javadoc.failOnError = false
+        task javadocJar(type: Jar, dependsOn: javadoc) {
+            classifier = 'javadoc'
+            from javadoc.destinationDir
+        }
+
+        artifacts {
+            archives sourcesJar
+            archives javadocJar
+        }
+
+        tasks.withType(GenerateModuleMetadata) {
+            enabled = false
+        }
+
+        publishing {
+            publications {
+                mavenJava(MavenPublication) {
+
+                    pom {
+                        name = 'data-mask'
+                        description = 'Data Masking library for jackson-databind.'
+                        url = 'https://github.com/bancolombia/data-mask'
+                        licenses {
+                            license {
+                                name = "MIT License"
+                                url = "https://opensource.org/licenses/mit-license.php"
+                                distribution = "repo"
+                            }
+                        }
+                        developers {
+                            developer {
+                                id = "gabheadz"
+                                name = "Gabriel Martinez"
+                                email = "gabrieljm@gmail.com"
+                            }
+                        }
+                        scm {
+                            url ="git@github.com:bancolombia/data-mask.git"
+                        }
+                    }
+
+                    from components.java
+
+                    artifact sourcesJar
+                    artifact javadocJar
+
+                    groupId = groupId
+                    artifactId = artifactId
+                    version = project.property('version')
+                }
+            }
+            repositories {
+                maven {
+                    name = "OSSRH"
+                    url = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+                    credentials {
+                        username = System.getenv("MAVEN_USERNAME")
+                        password = System.getenv("MAVEN_PASSWORD")
+                    }
+                }
+            }
+        }
+
+        if (project.hasProperty('signing.keyId')) {
+            signing {
+                sign publishing.publications.mavenJava
+            }
+        }
+    }
+
+}
+
+task generateMergedReport(type: JacocoReport) {
+    dependsOn = subprojects.test
+    additionalSourceDirs.setFrom files(subprojects.sourceSets.main.allSource.srcDirs)
+    sourceDirectories.setFrom files(subprojects.sourceSets.main.allSource.srcDirs)
+    classDirectories.setFrom files(subprojects.sourceSets.main.output)
+    executionData.setFrom project.fileTree(dir: '.', include: '**/build/jacoco/test.exec')
+    reports {
+        xml.enabled true
+        csv.enabled false
+        html.enabled true
+    }
+}
+
+
