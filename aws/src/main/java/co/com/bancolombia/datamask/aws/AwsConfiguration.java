@@ -21,9 +21,13 @@ import org.springframework.context.annotation.Profile;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
+import java.util.UUID;
 
 @Configuration
 public class AwsConfiguration {
+
+    private static final String DEFAULT_ALGORITHM = "AES";
+    private static final String WRAPPING_ALGORITHM = "AES/GCM/NoPadding";
 
     @Value("${secrets.dataMaskKey}")
     private String secretWithDataMaskKey;
@@ -34,6 +38,8 @@ public class AwsConfiguration {
     @Value("${adapters.aws.secrets-manager.endpoint}")
     private String secretsEndpoint;
 
+    @Value("${dataMask.encryptionContext:default_context}")
+    private String encryptionContext;
 
     @Profile({"!local"})
     @Bean(name = "secretManagerSyncConnectorForDataMasking")
@@ -51,13 +57,15 @@ public class AwsConfiguration {
     public SecretKey retrieveEncryptionKey(
             @Qualifier("secretManagerSyncConnectorForDataMasking") GenericManager manager) throws SecretException {
         var encryptionKey = manager.getSecret(secretWithDataMaskKey).getBytes();
-        return new SecretKeySpec(validateAndDeriveKey(encryptionKey), "AES");
+        return new SecretKeySpec(validateAndDeriveKey(encryptionKey), DEFAULT_ALGORITHM);
     }
 
     @Bean
     public JceMasterKey masterKeyProvider(SecretKey retrieveEncryptionKey) {
-        return JceMasterKey.getInstance(retrieveEncryptionKey, "Example",
-                "RandomKey", "AES/GCM/NoPadding");
+        return JceMasterKey.getInstance(retrieveEncryptionKey,
+                this.encryptionContext,
+                UUID.randomUUID().toString(),
+                WRAPPING_ALGORITHM);
     }
 
     @Bean
