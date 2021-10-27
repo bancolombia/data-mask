@@ -1,6 +1,6 @@
-# Contributing
+## Contributing
 
-[fork]: https://github.com/bancolombia/data-mask
+[fork]: https://github.com/bancolombia/data-mask/fork
 [pr]: https://github.com/bancolombia/data-mask/compare
 [style]: STYLEGUIDE
 [code-of-conduct]: CODE_OF_CONDUCT.md
