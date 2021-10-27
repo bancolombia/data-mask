@@ -1,21 +1,30 @@
 # Data Masking Utility
 
+[code-of-conduct]: CODE_OF_CONDUCT.md
+[contributing]: CONTRIBUTING.md
+[encryption_context]: https://aws.amazon.com/blogs/security/how-to-protect-the-integrity-of-your-encrypted-data-by-using-aws-key-management-service-and-encryptioncontext/
+
 Utility library to use with Jackson-Databind to provide custom 
 POJO/JSON serialization and deserialization aiming to protect
-sensitive data via masking and/or encrypting-decrypting. 
+sensitive data via masking with additional encrypting-decrypting. 
 
 Functionality:
 
-- Masking an Object string members : Serializing to a pattern string. Eg: masking a credit card number 
-  from `"1111 2222 3333 4444"` to `"***************4444"`.
+- Masking string members of an object
 
+  - Serializing to a pattern string.
+  
+    Example: masking a credit card number 
+    from `"1111 2222 3333 4444"` to `"***************4444"`.
 
-- Encrypting: Converting string input value in a pair of masked an ecrypted values.
+- Encrypting:
+    
+  Converting string members of an object into a pair of masked an ecrypted values.
 
   - As an composite String:
     `"1111 2222 3333 4444"` to `"masked_pair=***************4444|<credit card encrypted value>"`
   
-  - As a Json Object. Eg: Converting `"1111 2222 3333 4444"` into:
+  - Or as Json Object. Eg: Converting `"1111 2222 3333 4444"` into:
     ```json
     {
       "masked": "***************4444",
@@ -23,7 +32,7 @@ Functionality:
     }
     ```
 
-- Decrypting: Converting an encrypted string/json input value to its plain value.
+- Decrypting: Reverting an encrypted string/json input value to its original plain value.
 
     - From a composite String:
       Restoring `"masked_pair=***************4444|<credit card encrypted value>"` to `"1111 2222 3333 4444"`.
@@ -42,7 +51,7 @@ Functionality:
 
 With Gradle
 ```gradle
-implementation 'com.github.bancolombia:data-mask:1.0.0-SNAPSHOT'
+implementation 'com.github.bancolombia:data-mask:1.0.0'
 ```
 
 With maven
@@ -50,7 +59,7 @@ With maven
 <dependency>
   <groupId>com.github.bancolombia</groupId>
   <artifactId>data-mask</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0</version>
 </dependency>
 ```
 
@@ -59,7 +68,7 @@ This library depends on:
 - `org.apache.commons:commons-lang3`
 - `com.fasterxml.jackson.core:jackson-databind`
 
-## Using
+## Using Data-Mask
 
 ### A. Decorate POJO 
 
@@ -185,6 +194,51 @@ String json = "{\n" +
 Customer customer = mapper.readValue(json, Customer.class);
 assertEquals("4444555566665678", customer.creditCardNumber());
 ```
+# AWS SDK integration
+
+This library offers a concrete implementation for the `DataCipher` and `DataDecipher` interfaces
+called `data-mask-aws` which provides via the **Aws crypto SDK** and Secrets Manager
+the encryption and decryption funcionality.
+
+## Using
+
+With Gradle
+```gradle
+implementation 'com.github.bancolombia:data-mask-aws:1.0.0'
+```
+
+With maven
+```maven
+<dependency>
+  <groupId>com.github.bancolombia</groupId>
+  <artifactId>data-mask-aws</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+
+### Additional configuration
+
+Passed via configuration `application.properties` or `application.yaml` 
+
+| Attribute  | Default value  | Description  |
+|---|---|---|
+| secrets.dataMaskKey  |  | Name of the stored symmetric key in AWS Secrets manager |
+| dataMask.encryptionContext | "default_context" | The context for additional protection of the encrypted data. See [Usage of Encryption contexts][encryption_context].|
+| adapters.aws.secrets-manager.region  |   | Region for the Secrets Manager service  |
+| adapters.aws.secrets-manager.endpoint  |   | (Optional) for local dev only|
+
+### Declare Bean
+
+Just declare the customized Object Mapper as a Bean.
+
+```java
+    @Bean
+    @Primary
+    public ObjectMapper objectMapper(DataCipher awsCipher, DataDecipher awsDecipher) {
+        return new MaskingObjectMapper(awsCipher, awsDecipher);
+    }
+```
 
 # Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
+
+Please read our [Code of conduct][code-of-conduct] and [Contributing Guide][contributing]. 
