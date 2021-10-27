@@ -7,12 +7,11 @@
 
 Hi there! We're thrilled that you'd like to contribute to this project. Your help is essential for keeping it great.
 
-Please note that this project is released with a [Contributor Code of Conduct][CODE_OF_CONDUCT.md]. 
-By participating in this project you agree to abide by its terms.
+Please note that this project is released with a [Contributor Code of Conduct][code-of-conduct]. By participating in this project you agree to abide by its terms.
 
 ## Submitting a pull request
 
-0. [Fork](https://github.com/bancolombia/data-mask/fork) and clone the repository
+0. [Fork][fork] and clone the repository
 0. Create a new branch: `git checkout -b my-branch-name`
 0. Make your change and remember to add tests
 0. Build the project locally and run local tests
