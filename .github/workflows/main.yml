@@ -53,7 +53,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Setup Javadoc
-        run: ./gradlew install
+        run: ./gradlew clean build -x test
       - name: Prepare gpg key
         run: |
           echo "${{secrets.SIGNING_KEY_FILE}}" | base64 -d > ~/.gradle/secring.gpg
