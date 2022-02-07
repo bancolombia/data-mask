@@ -1,3 +1,4 @@
+[![Scorecards supply-chain security](https://github.com/bancolombia/data-mask/actions/workflows/scorecards-analysis.yml/badge.svg)](https://github.com/bancolombia/data-mask/actions/workflows/scorecards-analysis.yml)
 # Data Masking Utility
 
 [code-of-conduct]: CODE_OF_CONDUCT.md
