@@ -8,6 +8,8 @@ allprojects {
         mavenCentral()
     }
 
+    group 'com.github.bancolombia'
+
     sonarqube {
         properties {
             property "sonar.sourceEncoding", "UTF-8"
