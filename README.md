@@ -52,14 +52,14 @@ Functionality:
 
 With Gradle
 ```gradle
-implementation 'com.github.bancolombia:data-mask:1.0.0'
+implementation 'com.github.bancolombia:data-mask-core:1.0.0'
 ```
 
 With maven
 ```maven
 <dependency>
   <groupId>com.github.bancolombia</groupId>
-  <artifactId>data-mask</artifactId>
+  <artifactId>data-mask-core</artifactId>
   <version>1.0.0</version>
 </dependency>
 ```

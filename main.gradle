@@ -8,6 +8,8 @@ allprojects {
         mavenCentral()
     }
 
+    group 'com.github.bancolombia'
+
     sonarqube {
         properties {
             property "sonar.sourceEncoding", "UTF-8"
@@ -23,6 +25,12 @@ allprojects {
             property "sonar.exclusions", ".github/**"
             property 'sonar.coverage.exclusions', 'examples/**/*'
         }
+    }
+}
+
+nexusPublishing {
+    repositories {
+        sonatype()
     }
 }
 
@@ -42,11 +50,11 @@ subprojects {
     }
 
     dependencies {
-        compileOnly 'org.projectlombok:lombok'
-        annotationProcessor 'org.projectlombok:lombok'
-        testAnnotationProcessor 'org.projectlombok:lombok'
-        testCompileOnly 'org.projectlombok:lombok'
-        testImplementation 'io.projectreactor:reactor-test'
+        compileOnly 'org.projectlombok:lombok:1.18.24'
+        annotationProcessor 'org.projectlombok:lombok:1.18.24'
+        testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
+        testCompileOnly 'org.projectlombok:lombok:1.18.24'
+        testImplementation 'io.projectreactor:reactor-test:3.4.18'
         testImplementation(platform('org.junit:junit-bom:5.7.0'))
         testImplementation('org.junit.jupiter:junit-jupiter')
         testImplementation 'org.mockito:mockito-inline:3.7.7'
@@ -55,6 +63,7 @@ subprojects {
 
     dependencyManagement {
         imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
             mavenBom "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
         }
     }
@@ -143,16 +152,6 @@ subprojects {
                     groupId = groupId
                     artifactId = artifactId
                     version = project.property('version')
-                }
-            }
-            repositories {
-                maven {
-                    name = "OSSRH"
-                    url = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-                    credentials {
-                        username = System.getenv("MAVEN_USERNAME")
-                        password = System.getenv("MAVEN_PASSWORD")
-                    }
                 }
             }
         }
