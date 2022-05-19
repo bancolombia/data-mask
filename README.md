@@ -1,4 +1,3 @@
-[![Scorecards supply-chain security](https://github.com/bancolombia/data-mask/actions/workflows/scorecards-analysis.yml/badge.svg)](https://github.com/bancolombia/data-mask/actions/workflows/scorecards-analysis.yml)
 # Data Masking Utility
 
 [code-of-conduct]: CODE_OF_CONDUCT.md
@@ -11,48 +10,108 @@ sensitive data via masking with additional encrypting-decrypting.
 
 Functionality:
 
-- Masking string members of an object
+Using a customized Object Mapper you can:
 
-  - Serializing to a pattern string.
+- Perform Masking on string members of an object
+
+  - Scenario: masking a credit card number when serializing to json.
   
-    Example: masking a credit card number 
-    from `"1111 2222 3333 4444"` to `"***************4444"`.
+    ```java
+    public class Customer {     
+    
+        @Mask(rightVisible=4)
+        public String creditCardNumber;
+    
+    }
+    
+    Customer c = new Customer();
+    c.creditCardNumber = "1111222233334444";
+    String json = objectMapper.writeValueAsString(c);
+    
+    assert json.equals("{ \"creditCardNumber\": \"***************4444\"}")
+    ```
 
 - Encrypting:
     
   Converting string members of an object into a pair of masked an ecrypted values.
 
   - As an composite String:
-    `"1111 2222 3333 4444"` to `"masked_pair=***************4444|<credit card encrypted value>"`
   
-  - Or as Json Object. Eg: Converting `"1111 2222 3333 4444"` into:
-    ```json
-    {
-      "masked": "***************4444",
-      "enc": "<credit card encrypted value>"
+    ```java
+    public class Customer {     
+    
+        @Mask(rightVisible=4, queryOnly=false)
+        public String creditCardNumber;
+    
     }
+
+    Customer c = new Customer();
+    c.creditCardNumber = "1111222233334444";
+    String json = objectMapper.writeValueAsString(c);
+    
+    assert json.equals("{
+      \"creditCardNumber\": \"masked_pair=***************4444|<credit card encrypted value>\"
+    }")
     ```
+
+  - Or as Json Object.
+  
+    ```java
+    public class Customer {     
+    
+        @Mask(rightVisible=4, queryOnly=false, format=DataMaskingConstants.ENCRYPTION_AS_OBJECT)
+        public String creditCardNumber;
+    
+    }
+
+    Customer c = new Customer();
+    c.creditCardNumber = "1111222233334444";
+    
+    String json = objectMapper.writeValueAsString(c);
+    
+    assert json.equals("{
+      \"creditCardNumber\": {
+        \"masked\": \"***************4444\",
+        \"enc\": \"<credit card encrypted value>\"
+      }
+    }")
+    ```
+
 
 - Decrypting: Reverting an encrypted string/json input value to its original plain value.
 
-    - From a composite String:
-      Restoring `"masked_pair=***************4444|<credit card encrypted value>"` to `"1111 2222 3333 4444"`.
+    - Having a JSON with a composite string value:
 
-    - From a Json Object. Converting:
-      ```json
-      {
-        "masked": "***************4444",
-        "enc": "<credit card encrypted value>"
-      }
-      ```
+      ```java
+      String json = "{
+        \"creditCardNumber\": \"masked_pair=***************4444|<credit card encrypted value>\"
+      }";
       
-      back to `"1111 2222 3333 4444"` again.
+      Customer c = objectMapper.readValue(json, Customer.class);
+      
+      assert c.creditCardNumber.equals("1111222233334444");
+      ```
+    
+    - Having a JSON with an Object value:
+    
+      ```java
+      String json = "{
+        \"creditCardNumber\": {
+          \"masked": \"***************4444\",
+          \"enc": \"<credit card encrypted value>\"
+        }
+      }";
+    
+      Customer c = objectMapper.readValue(json, Customer.class);
+      
+      assert c.creditCardNumber.equals("1111222233334444");
+      ```
   
 ## Installing
 
 With Gradle
 ```gradle
-implementation 'com.github.bancolombia:data-mask-core:1.0.0'
+implementation 'com.github.bancolombia:data-mask-core:1.0.1'
 ```
 
 With maven
@@ -60,7 +119,7 @@ With maven
 <dependency>
   <groupId>com.github.bancolombia</groupId>
   <artifactId>data-mask-core</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
 </dependency>
 ```
 
@@ -71,7 +130,43 @@ This library depends on:
 
 ## Using Data-Mask
 
-### A. Decorate POJO 
+### A. Implement Cipher and Decipher interfaces
+
+This library defines two interfaces: `DataCipher` and `DataDecipher` which are used in the encryption/decryption
+processes.
+
+User of this library must define implementation for both interfaces.
+
+Dummy Example:
+```java
+var dummyCipher = new DataCipher() {
+    @Override
+    public String cipher(String plainData) {
+        return "the encrypted value";
+    }
+};
+
+var dummyDecipher = new DataDecipher() {
+    @Override
+    public String decipher(String encryptedData) {
+        return "the plain value";
+    }
+};
+
+```
+
+### B. Declare the customized Object Mapper. 
+
+This library defines a custom `ObjectMapper` in order to provide the masking and unmasking functionality, and takes
+as constructor arguments, the implementations of both `DataCipher` and `DataDecipher` interfaces.
+
+```java
+    public ObjectMapper objectMapper(DataCipher someCipherImpl, DataDecipher someDecipherImpl) {
+        return new MaskingObjectMapper(someCipherImpl, someDecipherImpl);
+    }
+```
+
+### C. Decorate POJO's 
 
 Members to be masked/encrypted should be annotated with `@Mask`, eg: 
 
@@ -102,38 +197,9 @@ __Anotation Properties__
 |  |  | Using `ENCRYPTION_AS_OBJECT`, means masked and encrypted values are serialized as a json object. |
 
 
-### B. Implement Cipher and Decipher interfaces
+### D. Use Custom ObjectMapper
 
-This library defines two interfaces: `DataCipher` and `DataDecipher` which are used in the encryption/decryption 
-processes.
-
-User of this library must define implementation for both interfaces.
-
-
-### C. Define and use Custom ObjectMapper
-
-This library defines a custom `ObjectMapper` in order to provide the masking and unmasking functionality, and takes 
-as constructor arguments, the implementations of both `DataCipher` and `DataDecipher` interfaces.
-
-```java
-var dummyCipher = new DataCipher() {
-    @Override
-    public String cipher(String plainData) {
-        return "the encrypted value";
-    }
-};
-
-var dummyDecipher = new DataDecipher() {
-    @Override
-    public String decipher(String encryptedData) {
-        return "the plain value";
-    }
-};
-
-ObjectMapper mapper = new MaskingObjectMapper(dummyCipher, dummyDecipher);
-```
-
-So, having this example of annotated class:
+Use the custom `ObjectMapper`, so, having this example of annotated class:
 
 ```java
     @Data
@@ -205,7 +271,7 @@ the encryption and decryption funcionality.
 
 With Gradle
 ```gradle
-implementation 'com.github.bancolombia:data-mask-aws:1.0.0'
+implementation 'com.github.bancolombia:data-mask-aws:1.0.1'
 ```
 
 With maven
@@ -213,7 +279,7 @@ With maven
 <dependency>
   <groupId>com.github.bancolombia</groupId>
   <artifactId>data-mask-aws</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
 </dependency>
 ```
 
@@ -228,9 +294,9 @@ Passed via configuration `application.properties` or `application.yaml`
 | adapters.aws.secrets-manager.region  |   | Region for the Secrets Manager service  |
 | adapters.aws.secrets-manager.endpoint  |   | (Optional) for local dev only|
 
-### Declare Bean
+### Use with Spring-Boot
 
-Just declare the customized Object Mapper as a Bean.
+Just declare the customized Object Mapper as a Bean, and add **@Primary** annotation to use instead of the default ObjectMapper. 
 
 ```java
     @Bean
@@ -243,3 +309,4 @@ Just declare the customized Object Mapper as a Bean.
 # Contribute
 
 Please read our [Code of conduct][code-of-conduct] and [Contributing Guide][contributing]. 
+
