@@ -57,7 +57,7 @@ class JacksonJsonProcessorTests {
         try {
             String jsonValue = mapper.writeValueAsString(new DataMask<>(json,defaultFields));
             System.out.println(jsonValue);
-            assertTrue(jsonValue.contains("***********hank"));
+            assertTrue(jsonValue.contains("**************"));
             assertFalse(jsonValue.contains(DataMaskingConstants.MASKING_PREFIX));
         } catch (JsonProcessingException e) {
             e.printStackTrace();
@@ -171,7 +171,7 @@ class JacksonJsonProcessorTests {
         String jsonValue = mapper.writeValueAsString(new DataMask<>(json,fields));
         System.out.println(jsonValue);
 
-        assertTrue(jsonValue.contains("\"_id\":\"********************9356\""));
+        assertTrue(jsonValue.contains("\"_id\":\"************************\""));
         assertTrue(jsonValue.contains("\"guid\":\"masked_pair=14fe****************************5722|MTRmZTE2MWQtNjcwNC00OGEwLThiMDgtYjNhM2IyNmE1NzIy\""));
         assertTrue(jsonValue.contains("\"email\":\"**********@bluplanet.com\""));
         assertTrue(jsonValue.contains("\"name\":\"*********"));

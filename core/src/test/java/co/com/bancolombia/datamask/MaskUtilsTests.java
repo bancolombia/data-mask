@@ -17,9 +17,9 @@ class MaskUtilsTests {
                 "        \"enc\": \"dGhpcyBzaG91bGQgYmUgYW4gZWNyeXB0ZWQgdmFsdWUK\"\n" +
                 "        }\n" +
                 "        }";
-        Assertions.assertEquals("*********************Text", MaskUtils.mask(testString));
-        Assertions.assertEquals("*********************Text", MaskUtils.mask(testString,0,0));
-        Assertions.assertEquals("*********************Text", MaskUtils.mask(testString,-1,-1));
+        Assertions.assertEquals("*************************", MaskUtils.mask(testString));
+        Assertions.assertEquals("*************************", MaskUtils.mask(testString,0,0));
+        Assertions.assertEquals("*************************", MaskUtils.mask(testString,-1,-1));
     }
 
     @Test

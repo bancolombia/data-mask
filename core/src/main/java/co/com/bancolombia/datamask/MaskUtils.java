@@ -21,15 +21,13 @@ public class MaskUtils {
 
         var leftCount = cleanIntParam(showFirstDigitCount);
         var rightCount = cleanIntParam(showLastDigitCount);
-        if (leftCount == 0 && rightCount == 0) {
-            //rightCount = 4;
+        int length = fieldValue.length();
+        int shows = leftCount + rightCount;
+        int hidden = length-shows;
+        if(shows >= length || (leftCount == 0 && rightCount == 0)){
+            return StringUtils.repeat("*",length);
         }
-
-        String leftPart = StringUtils.left(fieldValue, leftCount);
-        String maskedPart = StringUtils.repeat("*", fieldValue.length() - (leftCount + rightCount));
-        String rightPart = StringUtils.right(fieldValue, rightCount);
-
-        return leftPart + maskedPart + rightPart;
+        return StringUtils.overlay(fieldValue,StringUtils.repeat("*",hidden) ,leftCount, leftCount + hidden);
     }
 
     public static String maskAsEmail(String fieldValue) {

@@ -26,12 +26,18 @@ public class JsonSerializer extends StdSerializer<DataMask> {
     public void serialize(DataMask value, JsonGenerator generator, SerializerProvider provider) throws IOException {
         var objectNode = convertValue(value.getData() , generator.getCodec());
         Map<String, MaskingFormat>  values = value.getFields();
-        values.forEach( (field,format) ->
-                objectNode.findParents(field)
-                        .stream()
-                        .filter(jsonNode -> jsonNode.get(field).isTextual())
-                        .forEach(jsonNode -> applyMask(jsonNode.get(field).textValue(), format, field, (ObjectNode) jsonNode)));
+        findFields(objectNode, values, null, objectNode);
         generator.writeObject(objectNode);
+    }
+
+    private void findFields(JsonNode node, Map<String, MaskingFormat> maskField, String fieldName, JsonNode parent){
+        if(node.isArray()){
+            node.elements().forEachRemaining(element -> findFields(element, maskField,null, node));
+        }else if(node.isObject()){
+            node.fields().forEachRemaining(field -> findFields(field.getValue(), maskField, field.getKey(), node));
+        }else if(node.isTextual() && fieldName != null && maskField.containsKey(fieldName)){
+            applyMask(node.textValue(), maskField.get(fieldName), fieldName, (ObjectNode)parent);
+        }
     }
 
     private JsonNode convertValue(Object node, ObjectCodec objectCodec) throws JsonProcessingException {

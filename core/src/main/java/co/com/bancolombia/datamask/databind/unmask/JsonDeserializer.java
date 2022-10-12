@@ -3,6 +3,7 @@ package co.com.bancolombia.datamask.databind.unmask;
 import co.com.bancolombia.datamask.DataMaskingConstants;
 import co.com.bancolombia.datamask.MaskUtils;
 import co.com.bancolombia.datamask.cipher.DataDecipher;
+import co.com.bancolombia.datamask.databind.mask.MaskingFormat;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.ObjectCodec;
@@ -17,6 +18,8 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class JsonDeserializer extends StdSerializer<DataUnmasked> {
@@ -31,25 +34,30 @@ public class JsonDeserializer extends StdSerializer<DataUnmasked> {
     @Override
     public void serialize(DataUnmasked value, JsonGenerator generator, SerializerProvider provider) throws IOException {
         var objectNode = convertValue(value.getData() , generator.getCodec());
-        value.getFields().forEach(field ->
-                objectNode.findParents(field)
-                    .forEach(jsonNode -> {
-                        if(jsonNode.get(field).isTextual() && isEncryptedString(jsonNode.get(field))) {
-                            decipherValue(jsonNode, field);
-                        }else if(isEncryptedObject(jsonNode.get(field))){
-                            decipherValueObject(jsonNode, field);
-                        }
-                }));
+        List<String> values = value.getFields();
+        findFields(objectNode, values, null, objectNode);
         generator.writeObject(objectNode);
     }
 
-    private void decipherValueObject(JsonNode jsonNode, String field){
-        ((ObjectNode)jsonNode).put(field, dataDecipher.decipher(jsonNode.findValue(DataMaskingConstants.ENCRYPTED_ATTR).asText()));
+    private void findFields(JsonNode node, List<String> maskField, String fieldName, JsonNode parent){
+        if(node.isArray()) {
+            node.elements().forEachRemaining(element -> findFields(element, maskField, null, node));
+        }else if(isEncryptedObject(node)){
+            decipherValueObject(node, fieldName, parent);
+        }else if(node.isObject()){
+            node.fields().forEachRemaining(field -> findFields(field.getValue(), maskField, field.getKey(), node));
+        }else if(isEncryptedString(node) && maskField.contains(fieldName)){
+            decipherValue(node, fieldName, parent);
+        }
     }
 
-    private void decipherValue(JsonNode jsonNode, String field){
-        String[] maskedValuesInfo = MaskUtils.split(jsonNode.get(field).textValue());
-        ((ObjectNode)jsonNode).put(field, dataDecipher.decipher(maskedValuesInfo[1]));
+    private void decipherValueObject(JsonNode node, String fieldName, JsonNode parent){
+        ((ObjectNode)parent).put(fieldName, dataDecipher.decipher(node.findValue(DataMaskingConstants.ENCRYPTED_ATTR).asText()));
+    }
+
+    private void decipherValue(JsonNode jsonNode, String fieldName, JsonNode parent){
+        String[] maskedValuesInfo = MaskUtils.split(parent.get(fieldName).textValue());
+        ((ObjectNode)parent).put(fieldName, dataDecipher.decipher(maskedValuesInfo[1]));
     }
 
     private JsonNode convertValue(Object node, ObjectCodec objectCodec) throws JsonProcessingException {
