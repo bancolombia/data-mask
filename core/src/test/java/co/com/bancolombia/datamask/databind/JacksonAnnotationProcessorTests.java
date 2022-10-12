@@ -1,9 +1,9 @@
 package co.com.bancolombia.datamask.databind;
 
-import co.com.bancolombia.datamask.cipher.DataCipher;
-import co.com.bancolombia.datamask.cipher.DataDecipher;
 import co.com.bancolombia.datamask.DataMaskingConstants;
 import co.com.bancolombia.datamask.Mask;
+import co.com.bancolombia.datamask.cipher.DataCipher;
+import co.com.bancolombia.datamask.cipher.DataDecipher;
 import co.com.bancolombia.datamask.databind.unmask.StringDeserializer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +17,10 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class JacksonAnnotationProcessorTests {
 
@@ -156,7 +159,7 @@ class JacksonAnnotationProcessorTests {
     public static class Customer {
         private String name;
 
-        @Mask(queryOnly=false, isEmail = true)
+        @Mask(queryOnly=false, isEmail = true, leftVisible = 2, rightVisible = 1)
         private String email;
     }
 
