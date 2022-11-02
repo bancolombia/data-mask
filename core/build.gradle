@@ -1,5 +1,4 @@
 dependencies {
     api 'org.apache.commons:commons-lang3:3.11'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation 'com.google.code.gson:gson:2.10'
 }
