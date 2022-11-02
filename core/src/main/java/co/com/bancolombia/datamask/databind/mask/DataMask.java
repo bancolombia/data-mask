@@ -10,14 +10,14 @@ import java.util.stream.Collectors;
 @Getter
 public class DataMask<T> {
     private final T data;
-    private final Map<String, MaskingFormat> fields;
+    private final Map<IdentifyField, MaskingFormat> fields;
 
-    public DataMask(T data, Map<String, MaskingFormat> fields){
+    public DataMask(T data, Map<IdentifyField, MaskingFormat> fields){
         this.data = data;
         this.fields = fields;
     }
 
-    public DataMask(T data, @NonNull List<String> defaultFields){
+    public DataMask(T data, @NonNull List<IdentifyField> defaultFields){
         this.data = data;
         this.fields = defaultFields.stream()
                 .collect(Collectors.toMap(k -> k, v -> new MaskingFormat()));
