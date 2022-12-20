@@ -1,6 +1,7 @@
 package co.com.bancolombia.datamask.databind.mask;
 
 import co.com.bancolombia.datamask.DataMaskingConstants;
+import co.com.bancolombia.datamask.databind.util.TransformationType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,8 +15,12 @@ public class MaskingFormat {
     private int leftVisible;
     private int rightVisible;
     private Boolean isEmail = false;
-    private boolean queryOnly = true;
+    private TransformationType transformationType = TransformationType.ONLY_MASK;
     private String format = DataMaskingConstants.ENCRYPTION_INLINE;
+
+    public MaskingFormat(TransformationType transformationType){
+        this.transformationType = transformationType;
+    }
 
     public MaskingFormat(int leftVisible,int rightVisible){
         this.leftVisible = leftVisible;
@@ -28,10 +33,10 @@ public class MaskingFormat {
         this.isEmail = isEmail;
     }
 
-    public MaskingFormat(int leftVisible,int rightVisible, Boolean isEmail, boolean queryOnly){
+    public MaskingFormat(int leftVisible,int rightVisible, Boolean isEmail, TransformationType transformationType){
         this.leftVisible = leftVisible;
         this.rightVisible = rightVisible;
         this.isEmail = isEmail;
-        this.queryOnly = queryOnly;
+        this.transformationType = transformationType;
     }
 }

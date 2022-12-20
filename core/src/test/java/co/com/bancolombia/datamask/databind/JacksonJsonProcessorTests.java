@@ -9,6 +9,8 @@ import co.com.bancolombia.datamask.cipher.NoOpDecipher;
 import co.com.bancolombia.datamask.databind.mask.*;
 import co.com.bancolombia.datamask.databind.unmask.DataUnmasked;
 import co.com.bancolombia.datamask.databind.unmask.JsonDeserializer;
+import co.com.bancolombia.datamask.databind.util.QueryType;
+import co.com.bancolombia.datamask.databind.util.TransformationType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -34,11 +36,11 @@ class JacksonJsonProcessorTests {
     private ObjectMapper mapper;
 
     @BeforeEach
-    void init(){
+    void init() {
         mapper = new ObjectMapper();
     }
 
-    private void setCipherMapper(DataCipher dataCipher, DataDecipher dataDecipher){
+    private void setCipherMapper(DataCipher dataCipher, DataDecipher dataDecipher) {
         var module = new SimpleModule();
         module.addSerializer(DataMask.class, new JsonSerializer(DataMask.class, dataCipher));
         module.addSerializer(DataUnmasked.class, new JsonDeserializer(DataUnmasked.class, dataDecipher));
@@ -53,10 +55,10 @@ class JacksonJsonProcessorTests {
         var identifyFieldPass = new IdentifyField("password", QueryType.NAME);
         var identifyFieldMail = new IdentifyField("mail", QueryType.NAME);
 
-        var defaultFields = List.of(identifyFieldName,identifyFieldPass,identifyFieldMail);
+        var defaultFields = List.of(identifyFieldName, identifyFieldPass, identifyFieldMail);
 
         try {
-            String jsonValue = mapper.writeValueAsString(new DataMask<>(json,defaultFields));
+            String jsonValue = mapper.writeValueAsString(new DataMask<>(json, defaultFields));
             System.out.println(jsonValue);
             assertTrue(jsonValue.contains("**************"));
             assertFalse(jsonValue.contains(DataMaskingConstants.MASKING_PREFIX));
@@ -71,10 +73,10 @@ class JacksonJsonProcessorTests {
         setCipherMapper(new DummyCipher(), new NoOpDecipher());
         Customer c = new Customer("Jhon Doe", "jhon.doe12@somedomain.com");
         var identifyFieldEmail = new IdentifyField("email", QueryType.NAME);
-        var maskFormat = Map.of(identifyFieldEmail, new MaskingFormat(2,1,true,false));
+        var maskFormat = Map.of(identifyFieldEmail, new MaskingFormat(2, 1, true, TransformationType.ALL));
 
         try {
-            String jsonValue = mapper.writeValueAsString(new DataMask<>(c,maskFormat));
+            String jsonValue = mapper.writeValueAsString(new DataMask<>(c, maskFormat));
             System.out.println(jsonValue);
             assertTrue(jsonValue.contains("masked_pair=jh*******2@somedomain.com|amhvbi5kb2UxMkBzb21lZG9tYWluLmNvbQ=="));
         } catch (JsonProcessingException e) {
@@ -89,8 +91,10 @@ class JacksonJsonProcessorTests {
 
         String json = "{\"name\":\"Jhon Doe\",\"email\":\"masked_pair=jho******************.com|amhvbi5kb2UxMkBzb21lZG9tYWluLmNvbQ==\"}";
         var fieldsMasked = List.of("email");
+        var fields = Map.of(
+                new IdentifyField("/email", QueryType.PATH), new MaskingFormat(1, 0, true, TransformationType.ALL));
         try {
-            Customer customer = mapper.convertValue(new DataUnmasked(json,fieldsMasked), Customer.class);
+            Customer customer = mapper.convertValue(new DataUnmasked(json, fields), Customer.class);
             System.out.println(customer.toString());
             assertEquals("Jhon Doe", customer.getName());
             assertEquals("jhon.doe12@somedomain.com", customer.getEmail());
@@ -106,7 +110,7 @@ class JacksonJsonProcessorTests {
 
         Company c = new Company("Acme enterprises", "9999888877776666");
         var identifyFieldCard = new IdentifyField("card", QueryType.NAME);
-        var maskFormat = Map.of(identifyFieldCard, new MaskingFormat(3,4,false,false, DataMaskingConstants.ENCRYPTION_AS_OBJECT));
+        var maskFormat = Map.of(identifyFieldCard, new MaskingFormat(3, 4, false, TransformationType.ALL, DataMaskingConstants.ENCRYPTION_AS_OBJECT));
 
         try {
             String jsonValue = mapper.writeValueAsString(new DataMask<>(c, maskFormat));
@@ -125,7 +129,7 @@ class JacksonJsonProcessorTests {
         String json = "{\"name\":\"Acme enterprises\",\"card\":{\"masked\":\"999*********6666\",\"enc\":\"OTk5OTg4ODg3Nzc3NjY2Ng==\"}}";
         var maskFormat = List.of("card");
 
-        Company company = mapper.convertValue(new DataUnmasked(json, maskFormat), Company.class);
+        Company company = mapper.convertValue(new DataUnmasked(json, Map.of(new IdentifyField("card", QueryType.NAME), new MaskingFormat(TransformationType.ALL))), Company.class);
         System.out.println(company.toString());
         assertEquals("Acme enterprises", company.getName());
         assertEquals("9999888877776666", company.getCard());
@@ -137,7 +141,7 @@ class JacksonJsonProcessorTests {
 
         String json = "{\"name\":\"Jhon Doe\",\"email\":\"masked_pair=jho******************.com|amhvbi5kb2UxMkBzb21lZG9tYWluLmNvbQ==\"}";
         var fieldsMasked = List.of("email");
-        Customer customer = mapper.convertValue(new DataUnmasked(json, fieldsMasked), Customer.class);
+        Customer customer = mapper.convertValue(new DataUnmasked(json, Map.of(new IdentifyField("email", QueryType.NAME), new MaskingFormat(0,0, true, TransformationType.ALL))), Customer.class);
         System.out.println(customer.toString());
         assertEquals("Jhon Doe", customer.getName());
         assertEquals("jhon.doe12@somedomain.com", customer.getEmail());
@@ -154,7 +158,7 @@ class JacksonJsonProcessorTests {
 
         var fieldsMasked = Map.of(identifyFieldCard, masking);
         try {
-            String jsonValue = mapper.writeValueAsString(new DataMask<>(p,fieldsMasked));
+            String jsonValue = mapper.writeValueAsString(new DataMask<>(p, fieldsMasked));
             System.out.println(jsonValue);
             assertFalse(jsonValue.contains("*"));
         } catch (JsonProcessingException e) {
@@ -176,20 +180,20 @@ class JacksonJsonProcessorTests {
         var identifyFieldNameInArray = new IdentifyField("/friends/0/name", QueryType.PATH);
 
 
-        var fields = Map.of(identifyFieldId,new MaskingFormat(),
-                identifyFieldGuid, new MaskingFormat(4,4, false, false),
-                identifyFieldEmail, new MaskingFormat(0,0,true, true),
-                identifyFieldName, new MaskingFormat(0,2),
+        var fields = Map.of(identifyFieldId, new MaskingFormat(),
+                identifyFieldGuid, new MaskingFormat(4, 4, false, TransformationType.ALL),
+                identifyFieldEmail, new MaskingFormat(0, 0, true, TransformationType.ONLY_MASK),
+                identifyFieldName, new MaskingFormat(0, 2),
                 identifyFieldNameInArray, new MaskingFormat());
         //Mask and cipher
-        String jsonValue = mapper.writeValueAsString(new DataMask<>(json,fields));
+        String jsonValue = mapper.writeValueAsString(new DataMask<>(json, fields));
         System.out.println(jsonValue);
 
         assertTrue(jsonValue.contains("\"_id\":\"************************\""));
         assertTrue(jsonValue.contains("\"email\":\"**********@bluplanet.com\""));
         assertTrue(jsonValue.contains("\"name\":\"*********"));
         assertTrue(jsonValue.contains("\"guid\":\"masked_pair=14fe****************************5722|MTRmZTE2MWQtNjcwNC00OGEwLThiMDgtYjNhM2IyNmE1NzIy\""));
-        jsonValue = mapper.writeValueAsString(new DataUnmasked(jsonValue,List.of("guid")));
+        jsonValue = mapper.writeValueAsString(new DataUnmasked(jsonValue, Map.of(new IdentifyField("guid", QueryType.NAME), new MaskingFormat(TransformationType.ALL))));
 
         System.out.println(jsonValue);
         assertTrue(jsonValue.contains("\"guid\":\"14fe161d-6704-48a0-8b08-b3a3b26a5722\""));
@@ -202,7 +206,7 @@ class JacksonJsonProcessorTests {
     public static class Person {
         private String name;
 
-        @Mask(rightVisible=4)
+        @Mask(rightVisible = 4)
         private String card;
     }
 
@@ -228,7 +232,7 @@ class JacksonJsonProcessorTests {
     public static class Client {
         private String name;
 
-        @Mask(rightVisible=4, queryOnly = false)
+        @Mask(rightVisible = 4, queryOnly = TransformationType.ALL)
         private String[] card;
     }
 

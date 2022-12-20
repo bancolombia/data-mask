@@ -4,6 +4,7 @@ import co.com.bancolombia.datamask.DataMaskingConstants;
 import co.com.bancolombia.datamask.MaskUtils;
 import co.com.bancolombia.datamask.cipher.DataCipher;
 import co.com.bancolombia.datamask.databind.MaskedProperty;
+import co.com.bancolombia.datamask.databind.util.TransformationType;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
@@ -21,16 +22,22 @@ public class MaskSerializerCommons {
         if (!isSuitableForMasking(value)) {
             return value;
         }
-        var maskedValue = generateMaskedValue(value);
-        if (maskingFormat.isQueryOnly()) {
-            return maskedValue;
-        } else {
+        if (maskingFormat.getTransformationType().equals(TransformationType.ONLY_MASK)) {
+            return generateMaskedValue(value);
+        }
+        if(maskingFormat.getTransformationType().equals(TransformationType.ALL) ||
+        maskingFormat.getTransformationType().equals(TransformationType.ONLY_CIPHER)) {
+            var maskedValue = generateMaskedValue(value);
             return writeWithCipher(value, maskedValue);
         }
+        return value;
     }
 
     private Object writeWithCipher(String plainValue, String maskedValue) throws IOException {
         var cipherValue = dataCipher.cipher(plainValue);
+        if(maskingFormat.getTransformationType().equals(TransformationType.ONLY_CIPHER)){
+            return cipherValue;
+        }
         if (DataMaskingConstants.ENCRYPTION_INLINE.equalsIgnoreCase(maskingFormat.getFormat())) {
             return DataMaskingConstants.MASKING_PREFIX + maskedValue + "|" + cipherValue;
         } else {

@@ -1,6 +1,7 @@
 package co.com.bancolombia.datamask.databind.mask;
 
 import co.com.bancolombia.datamask.cipher.DataCipher;
+import co.com.bancolombia.datamask.databind.util.QueryType;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.ObjectCodec;
@@ -70,12 +71,10 @@ public class JsonSerializer extends StdSerializer<DataMask> {
                 if (!newContext.isValueNode()) {
                     nodeParent = newContext;
                 }
-
                 if (newContext.isArray()) {
                     nodeParentArray = newContext;
                     arrayNodeFound = true;
                 }
-
             }
         }
         if (previousContext.isValueNode()) {

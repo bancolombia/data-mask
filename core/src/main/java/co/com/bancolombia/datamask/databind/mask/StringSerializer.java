@@ -1,6 +1,7 @@
 package co.com.bancolombia.datamask.databind.mask;
 
 import co.com.bancolombia.datamask.cipher.DataCipher;
+import co.com.bancolombia.datamask.databind.util.TransformationType;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
@@ -13,9 +14,9 @@ public class StringSerializer extends StdSerializer<String> {
     private MaskingFormat maskingFormat;
     private DataCipher dataCipher;
 
-    public StringSerializer(int leftVisible, int rightVisible, boolean queryOnly, String format, boolean isEmail, DataCipher dataCipher) {
+    public StringSerializer(int leftVisible, int rightVisible, TransformationType transformationType, String format, boolean isEmail, DataCipher dataCipher) {
         super(String.class);
-        maskingFormat = new MaskingFormat(leftVisible, rightVisible, isEmail, queryOnly, format);
+        maskingFormat = new MaskingFormat(leftVisible, rightVisible, isEmail, transformationType, format);
         this.dataCipher = dataCipher;
     }
 

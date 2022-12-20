@@ -5,6 +5,7 @@ import co.com.bancolombia.datamask.Mask;
 import co.com.bancolombia.datamask.cipher.DataCipher;
 import co.com.bancolombia.datamask.cipher.DataDecipher;
 import co.com.bancolombia.datamask.databind.unmask.StringDeserializer;
+import co.com.bancolombia.datamask.databind.util.TransformationType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -159,7 +160,7 @@ class JacksonAnnotationProcessorTests {
     public static class Customer {
         private String name;
 
-        @Mask(queryOnly=false, isEmail = true, leftVisible = 2, rightVisible = 1)
+        @Mask(queryOnly= TransformationType.ALL, isEmail = true, leftVisible = 2, rightVisible = 1)
         private String email;
     }
 
@@ -169,7 +170,7 @@ class JacksonAnnotationProcessorTests {
     public static class Company {
         private String name;
 
-        @Mask(leftVisible = 3, rightVisible=4, queryOnly=false, format = DataMaskingConstants.ENCRYPTION_AS_OBJECT)
+        @Mask(leftVisible = 3, rightVisible=4, queryOnly=TransformationType.ALL, format = DataMaskingConstants.ENCRYPTION_AS_OBJECT)
         private String card;
     }
 
@@ -179,7 +180,7 @@ class JacksonAnnotationProcessorTests {
     public static class Client {
         private String name;
 
-        @Mask(rightVisible=4, queryOnly = false)
+        @Mask(rightVisible=4, queryOnly = TransformationType.ALL)
         private String[] card;
     }
 
