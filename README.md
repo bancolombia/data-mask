@@ -4,9 +4,9 @@
 [contributing]: CONTRIBUTING.md
 [encryption_context]: https://aws.amazon.com/blogs/security/how-to-protect-the-integrity-of-your-encrypted-data-by-using-aws-key-management-service-and-encryptioncontext/
 
-Utility library to use with Jackson-Databind to provide custom 
+Utility library to use with Jackson-Databind to provide custom
 POJO/JSON serialization and deserialization aiming to protect
-sensitive data via masking with additional encrypting-decrypting. 
+sensitive data via masking with additional encrypting-decrypting.
 
 Functionality:
 
@@ -15,7 +15,7 @@ Using a customized Object Mapper you can:
 - Perform Masking on string members of an object
 
   - Scenario: masking a credit card number when serializing to json.
-  
+
     ```java
     public class Customer {     
     
@@ -32,11 +32,11 @@ Using a customized Object Mapper you can:
     ```
 
 - Encrypting:
-    
+
   Converting string members of an object into a pair of masked an ecrypted values.
 
   - As an composite String:
-  
+
     ```java
     public class Customer {     
     
@@ -55,7 +55,7 @@ Using a customized Object Mapper you can:
     ```
 
   - Or as Json Object.
-  
+
     ```java
     public class Customer {     
     
@@ -80,33 +80,33 @@ Using a customized Object Mapper you can:
 
 - Decrypting: Reverting an encrypted string/json input value to its original plain value.
 
-    - Having a JSON with a composite string value:
+  - Having a JSON with a composite string value:
 
-      ```java
-      String json = "{
-        \"creditCardNumber\": \"masked_pair=***************4444|<credit card encrypted value>\"
-      }";
-      
-      Customer c = objectMapper.readValue(json, Customer.class);
-      
-      assert c.creditCardNumber.equals("1111222233334444");
-      ```
+    ```java
+    String json = "{
+      \"creditCardNumber\": \"masked_pair=***************4444|<credit card encrypted value>\"
+    }";
     
-    - Having a JSON with an Object value:
+    Customer c = objectMapper.readValue(json, Customer.class);
     
-      ```java
-      String json = "{
-        \"creditCardNumber\": {
-          \"masked": \"***************4444\",
-          \"enc": \"<credit card encrypted value>\"
-        }
-      }";
-    
-      Customer c = objectMapper.readValue(json, Customer.class);
-      
-      assert c.creditCardNumber.equals("1111222233334444");
-      ```
+    assert c.creditCardNumber.equals("1111222233334444");
+    ```
+
+  - Having a JSON with an Object value:
+
+    ```java
+    String json = "{
+      \"creditCardNumber\": {
+        \"masked": \"***************4444\",
+        \"enc": \"<credit card encrypted value>\"
+      }
+    }";
   
+    Customer c = objectMapper.readValue(json, Customer.class);
+    
+    assert c.creditCardNumber.equals("1111222233334444");
+    ```
+
 ## Installing
 
 With Gradle
@@ -155,7 +155,7 @@ var dummyDecipher = new DataDecipher() {
 
 ```
 
-### B. Declare the customized Object Mapper. 
+### B. Declare the customized Object Mapper.
 
 This library defines a custom `ObjectMapper` in order to provide the masking and unmasking functionality, and takes
 as constructor arguments, the implementations of both `DataCipher` and `DataDecipher` interfaces.
@@ -166,9 +166,9 @@ as constructor arguments, the implementations of both `DataCipher` and `DataDeci
     }
 ```
 
-### C. Decorate POJO's 
+### C. Decorate POJO's
 
-Members to be masked/encrypted should be annotated with `@Mask`, eg: 
+Members to be masked/encrypted should be annotated with `@Mask`, eg:
 
 ```java
     @Data
@@ -245,7 +245,7 @@ String json = mapper.writeValueAsString(customer);
 
 __Deserializing Process__
 
-The deserialization process should construct an instance of the example `Customer` 
+The deserialization process should construct an instance of the example `Customer`
 with is `creditCardNumber`property in plain text.
 
 ```java
@@ -261,6 +261,42 @@ String json = "{\n" +
 Customer customer = mapper.readValue(json, Customer.class);
 assertEquals("4444555566665678", customer.creditCardNumber());
 ```
+
+### E. Using library without POJO model
+
+- **Transformation of Json**
+
+
+The library offers a funtionability for transform JSON without a model known. The transformations supported are Cyphering, Decyphering and Masking.
+
+**DISCLAIMER**: This require high computer resources because it looping over JSON searching specific fields that we configurate.
+
+- *How to configure specific field for cypher from JSON?*
+
+![](https://i.imgur.com/cYmrxtI.png)
+
+
+- *How to configure specific field for masking from JSON?*
+
+![](https://i.imgur.com/7ZYWmPu.png)
+
+
+- How to decypher a JSON previously cyphered?
+
+![](https://i.imgur.com/insoc94.png)
+
+**1)** Transforming *obj(Any Json)* with specific configuration explained in previos answers
+
+**2)** Getting original *obj* previosly transformed
+
+
+- Can I use cyphering and masking in only one search?
+
+![](https://i.imgur.com/SeiaFYj.png)
+
+
+
+
 # AWS SDK integration
 
 This library offers a concrete implementation for the `DataCipher` and `DataDecipher` interfaces
@@ -285,7 +321,7 @@ With maven
 
 ### Additional configuration
 
-Passed via configuration `application.properties` or `application.yaml` 
+Passed via configuration `application.properties` or `application.yaml`
 
 | Attribute  | Default value  | Description  |
 |---|---|---|
@@ -296,14 +332,14 @@ Passed via configuration `application.properties` or `application.yaml`
 
 ### Use with Spring-Boot
 
-Just declare the customized Object Mapper as a Bean, and add **@Primary** annotation to use instead of the default ObjectMapper. 
+Just declare the customized Object Mapper as a Bean, and add **@Primary** annotation to use instead of the default ObjectMapper.
 
 ```java
     @Bean
-    @Primary
-    public ObjectMapper objectMapper(DataCipher awsCipher, DataDecipher awsDecipher) {
+@Primary
+public ObjectMapper objectMapper(DataCipher awsCipher, DataDecipher awsDecipher) {
         return new MaskingObjectMapper(awsCipher, awsDecipher);
-    }
+        }
 ```
 
 # Contribute

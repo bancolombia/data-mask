@@ -1,10 +1,11 @@
 package co.com.bancolombia.datamask.databind;
 
-import co.com.bancolombia.datamask.cipher.DataCipher;
-import co.com.bancolombia.datamask.cipher.DataDecipher;
 import co.com.bancolombia.datamask.DataMaskingConstants;
 import co.com.bancolombia.datamask.Mask;
+import co.com.bancolombia.datamask.cipher.DataCipher;
+import co.com.bancolombia.datamask.cipher.DataDecipher;
 import co.com.bancolombia.datamask.databind.unmask.StringDeserializer;
+import co.com.bancolombia.datamask.databind.util.TransformationType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -17,7 +18,10 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class JacksonAnnotationProcessorTests {
 
@@ -156,7 +160,7 @@ class JacksonAnnotationProcessorTests {
     public static class Customer {
         private String name;
 
-        @Mask(queryOnly=false, isEmail = true)
+        @Mask(queryOnly= TransformationType.ALL, isEmail = true, leftVisible = 2, rightVisible = 1)
         private String email;
     }
 
@@ -166,7 +170,7 @@ class JacksonAnnotationProcessorTests {
     public static class Company {
         private String name;
 
-        @Mask(leftVisible = 3, rightVisible=4, queryOnly=false, format = DataMaskingConstants.ENCRYPTION_AS_OBJECT)
+        @Mask(leftVisible = 3, rightVisible=4, queryOnly=TransformationType.ALL, format = DataMaskingConstants.ENCRYPTION_AS_OBJECT)
         private String card;
     }
 
@@ -176,7 +180,7 @@ class JacksonAnnotationProcessorTests {
     public static class Client {
         private String name;
 
-        @Mask(rightVisible=4, queryOnly = false)
+        @Mask(rightVisible=4, queryOnly = TransformationType.ALL)
         private String[] card;
     }
 
