@@ -2,7 +2,7 @@ allprojects {
     apply plugin: "java"
     apply plugin: "jacoco"
     apply plugin: 'org.sonarqube'
-    sourceCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
 
     repositories {
         mavenCentral()
@@ -38,6 +38,7 @@ subprojects {
 
     apply plugin: "java-library"
     apply plugin: "io.spring.dependency-management"
+    apply plugin: 'org.owasp.dependencycheck'
 
     ext {
         groupId = 'com.github.bancolombia'
@@ -54,8 +55,8 @@ subprojects {
         annotationProcessor 'org.projectlombok:lombok:1.18.24'
         testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
         testCompileOnly 'org.projectlombok:lombok:1.18.24'
-        testImplementation 'io.projectreactor:reactor-test:3.4.18'
-        testImplementation(platform('org.junit:junit-bom:5.7.0'))
+        testImplementation 'io.projectreactor:reactor-test'
+        testImplementation(platform('org.junit:junit-bom:5.8.2'))
         testImplementation('org.junit.jupiter:junit-jupiter')
         testImplementation 'org.mockito:mockito-inline:3.7.7'
         testImplementation 'org.mockito:mockito-junit-jupiter:3.7.7'
@@ -91,6 +92,13 @@ subprojects {
                 '-Amapstruct.suppressGeneratorTimestamp=true',
                 '-Amapstruct.suppressGeneratorVersionInfoComment=true'
         ]
+    }
+
+    check.dependsOn dependencyCheckAggregate
+
+    dependencyCheck {
+        format = 'JSON'
+        formats = ['JSON']
     }
 
     if (toPublish.split(',').contains(it.name)) {
