@@ -111,7 +111,7 @@ Using a customized Object Mapper you can:
 
 With Gradle
 ```gradle
-implementation 'com.github.bancolombia:data-mask-core:1.0.1'
+implementation 'com.github.bancolombia:data-mask-core:1.1.0'
 ```
 
 With maven
@@ -119,7 +119,7 @@ With maven
 <dependency>
   <groupId>com.github.bancolombia</groupId>
   <artifactId>data-mask-core</artifactId>
-  <version>1.0.1</version>
+  <version>1.1.0</version>
 </dependency>
 ```
 
@@ -307,7 +307,7 @@ the encryption and decryption funcionality.
 
 With Gradle
 ```gradle
-implementation 'com.github.bancolombia:data-mask-aws:1.0.1'
+implementation 'com.github.bancolombia:data-mask-aws:1.1.0'
 ```
 
 With maven
@@ -315,7 +315,7 @@ With maven
 <dependency>
   <groupId>com.github.bancolombia</groupId>
   <artifactId>data-mask-aws</artifactId>
-  <version>1.0.1</version>
+  <version>1.1.0</version>
 </dependency>
 ```
 
