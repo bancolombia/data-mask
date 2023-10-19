@@ -23,6 +23,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class AwsConfigurationTests {
 
+    private final String TEST_REGION = "us-east-1";
+    private final String TEST_ENDPOINT = "http://some-endpoint";
+    private final String TEST_SECRET = "secret-name";
+
     private AwsConfiguration classUnderTest;
 
     @Mock
@@ -37,19 +41,17 @@ class AwsConfigurationTests {
     @BeforeEach
     void prepare() {
         classUnderTest = new AwsConfiguration();
-        ReflectionTestUtils.setField(classUnderTest, "secretWithDataMaskKey", "secret-name");
-        ReflectionTestUtils.setField(classUnderTest, "secretsRegion", "us-east-1");
-        ReflectionTestUtils.setField(classUnderTest, "secretsEndpoint", "http://some-endpoint");
+        System.setProperty("aws.region", "us-east-1");
     }
 
     @Test
     void testGetSecretsGenericManager() {
-        assertNotNull(classUnderTest.manager());
+        assertNotNull(classUnderTest.manager(TEST_REGION));
     }
 
     @Test
     void testGetLocalSecretsGenericManager() {
-        assertNotNull(classUnderTest.localManager());
+        assertNotNull(classUnderTest.localManager(TEST_REGION, TEST_ENDPOINT));
     }
 
     @Test
@@ -76,14 +78,14 @@ class AwsConfigurationTests {
     })
     void testGenerateSecretKey(String key) throws SecretException {
         when(genericManager.getSecret(anyString())).thenReturn(key);
-        assertNotNull(classUnderTest.retrieveEncryptionKey(genericManager));
+        assertNotNull(classUnderTest.retrieveEncryptionKey(genericManager, TEST_SECRET));
     }
 
     @Test
     void testFailGenerateSecretKey() throws SecretException {
         when(genericManager.getSecret(anyString())).thenReturn("1234");
         assertThrows(SecretException.class, () -> {
-            classUnderTest.retrieveEncryptionKey(genericManager);
+            classUnderTest.retrieveEncryptionKey(genericManager, TEST_SECRET);
         });
     }
 

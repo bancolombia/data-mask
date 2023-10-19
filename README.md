@@ -111,7 +111,7 @@ Using a customized Object Mapper you can:
 
 With Gradle
 ```gradle
-implementation 'com.github.bancolombia:data-mask-core:1.1.0'
+implementation 'com.github.bancolombia:data-mask-core:1.2.0'
 ```
 
 With maven
@@ -119,7 +119,7 @@ With maven
 <dependency>
   <groupId>com.github.bancolombia</groupId>
   <artifactId>data-mask-core</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
 </dependency>
 ```
 
@@ -166,7 +166,7 @@ as constructor arguments, the implementations of both `DataCipher` and `DataDeci
     }
 ```
 
-### C. Decorate POJO's
+### C. Decorate POJOs
 
 Members to be masked/encrypted should be annotated with `@Mask`, eg:
 
@@ -300,14 +300,18 @@ The library offers a funtionability for transform JSON without a model known. Th
 # AWS SDK integration
 
 This library offers a concrete implementation for the `DataCipher` and `DataDecipher` interfaces
-called `data-mask-aws` which provides via the **Aws crypto SDK** and Secrets Manager
-the encryption and decryption funcionality.
+called `data-mask-aws` which provides via the **Aws crypto SDK** and Secrets Manager for
+the encryption and decryption functionality.
+
+**Cloud Dependencies**:
+
+- Secrets Manager for storing the symmetric key to configure the local AWS Crypto SDK
 
 ## Using
 
 With Gradle
 ```gradle
-implementation 'com.github.bancolombia:data-mask-aws:1.1.0'
+implementation 'com.github.bancolombia:data-mask-aws:1.2.0'
 ```
 
 With maven
@@ -315,7 +319,7 @@ With maven
 <dependency>
   <groupId>com.github.bancolombia</groupId>
   <artifactId>data-mask-aws</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
 </dependency>
 ```
 
@@ -323,24 +327,27 @@ With maven
 
 Passed via configuration `application.properties` or `application.yaml`
 
-| Attribute  | Default value  | Description  |
-|---|---|---|
-| secrets.dataMaskKey  |  | Name of the stored symmetric key in AWS Secrets manager |
-| dataMask.encryptionContext | "default_context" | The context for additional protection of the encrypted data. See [Usage of Encryption contexts][encryption_context].|
-| adapters.aws.secrets-manager.region  |   | Region for the Secrets Manager service  |
-| adapters.aws.secrets-manager.endpoint  |   | (Optional) for local dev only|
+| Attribute                             | Default value     | Description                                                                                                                                                                                                                                                                                                                      |
+|---------------------------------------|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| secrets.dataMaskKey                   |                   | Name of the secret that holds the symmetric key in AWS Secrets manager. <br> Encryption key for data-masking should be at least 16 bytes. Other lengths supported                     for AES encryption are 24 and 32 bytes. Any given key greater than 16 bytes, and not multiple of 16,  will be derived from first 16 bytes. |
+| dataMask.encryptionContext            | "default_context" | (Optional) The context for additional protection of the encrypted data. See [Usage of Encryption contexts][encryption_context].                                                                                                                                                                                                  |
+| dataMask.keyId                        | [blank]           | (Optional) The key Id                                                                                                                                                                                                                                                                                                            |
+| adapters.aws.secrets-manager.region   |                   | Region for the Secrets Manager service                                                                                                                                                                                                                                                                                           |
+| adapters.aws.secrets-manager.endpoint |                   | (Optional) for local dev only                                                                                                                                                                                                                                                                                                    |
 
 ### Use with Spring-Boot
 
 Just declare the customized Object Mapper as a Bean, and add **@Primary** annotation to use instead of the default ObjectMapper.
 
 ```java
-    @Bean
+@Bean
 @Primary
 public ObjectMapper objectMapper(DataCipher awsCipher, DataDecipher awsDecipher) {
-        return new MaskingObjectMapper(awsCipher, awsDecipher);
-        }
+    return new MaskingObjectMapper(awsCipher, awsDecipher);
+}
 ```
+
+Then is all the same as described earlier in this guide in section [C. Decorate-POJOs](#c-decorate-pojos)
 
 # Contribute
 
