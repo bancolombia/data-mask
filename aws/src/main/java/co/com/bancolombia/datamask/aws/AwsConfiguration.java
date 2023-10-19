@@ -21,7 +21,6 @@ import org.springframework.context.annotation.Profile;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
-import java.util.UUID;
 
 @Configuration
 public class AwsConfiguration {
@@ -40,6 +39,9 @@ public class AwsConfiguration {
 
     @Value("${dataMask.encryptionContext:default_context}")
     private String encryptionContext;
+
+    @Value("${dataMask.keyId:}")
+    private String keyId;
 
     @Profile({"!local"})
     @Bean(name = "secretManagerSyncConnectorForDataMasking")
@@ -64,7 +66,7 @@ public class AwsConfiguration {
     public JceMasterKey masterKeyProvider(SecretKey retrieveEncryptionKey) {
         return JceMasterKey.getInstance(retrieveEncryptionKey,
                 this.encryptionContext,
-                UUID.randomUUID().toString(),
+                this.keyId,
                 WRAPPING_ALGORITHM);
     }
 
