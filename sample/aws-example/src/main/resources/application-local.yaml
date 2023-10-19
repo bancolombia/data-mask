@@ -1,0 +1,12 @@
+
+secrets:
+  dataMaskKey: demo-secret
+
+adapters:
+  aws:
+    secrets-manager:
+      region: "us-east-1"
+      endpoint: "http://localhost:4566"
+
+dataMask:
+  encryptionContext: "holamundo"

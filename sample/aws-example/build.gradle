@@ -1,0 +1,14 @@
+dependencies {
+    implementation project(':data-mask-aws')
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'io.projectreactor.addons:reactor-extra'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test.onlyIf { !project.hasProperty('examplesTesting') }
+jacocoTestCoverageVerification.onlyIf { !project.hasProperty('examplesCoverage') }
+jacocoTestReport.onlyIf { !project.hasProperty('examplesCoverage') }
+
+sonarqube {
+    skipProject = true
+}

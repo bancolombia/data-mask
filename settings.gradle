@@ -5,3 +5,6 @@ project(':data-mask-core').projectDir = file('./core')
 
 include ":data-mask-aws"
 project(':data-mask-aws').projectDir = file('./aws')
+
+//include ":aws-example"
+//project(':aws-example').projectDir = file('./sample/aws-example')
