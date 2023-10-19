@@ -28,45 +28,34 @@ public class AwsConfiguration {
     private static final String DEFAULT_ALGORITHM = "AES";
     private static final String WRAPPING_ALGORITHM = "AES/GCM/NoPadding";
 
-    @Value("${secrets.dataMaskKey}")
-    private String secretWithDataMaskKey;
-
-    @Value("${adapters.aws.secrets-manager.region}")
-    private String secretsRegion;
-
-    @Value("${adapters.aws.secrets-manager.endpoint}")
-    private String secretsEndpoint;
-
-    @Value("${dataMask.encryptionContext:default_context}")
-    private String encryptionContext;
-
-    @Value("${dataMask.keyId:}")
-    private String keyId;
-
     @Profile({"!local"})
     @Bean(name = "secretManagerSyncConnectorForDataMasking")
-    public GenericManager manager() {
+    public GenericManager manager(@Value("${adapters.aws.secrets-manager.region}") String secretsRegion) {
         return new AWSSecretManagerConnector(secretsRegion);
     }
 
     @Profile({"local"})
     @Bean(name = "secretManagerSyncConnectorForDataMasking")
-    public GenericManager localManager() {
+    public GenericManager localManager(@Value("${adapters.aws.secrets-manager.region}") String secretsRegion,
+                                       @Value("${adapters.aws.secrets-manager.endpoint}") String secretsEndpoint) {
         return new AWSSecretManagerConnector(secretsRegion, secretsEndpoint);
     }
 
     @Bean
     public SecretKey retrieveEncryptionKey(
-            @Qualifier("secretManagerSyncConnectorForDataMasking") GenericManager manager) throws SecretException {
+            @Qualifier("secretManagerSyncConnectorForDataMasking") GenericManager manager,
+            @Value("${secrets.dataMaskKey}") String secretWithDataMaskKey) throws SecretException {
         var encryptionKey = manager.getSecret(secretWithDataMaskKey).getBytes();
         return new SecretKeySpec(validateAndDeriveKey(encryptionKey), DEFAULT_ALGORITHM);
     }
 
     @Bean
-    public JceMasterKey masterKeyProvider(SecretKey retrieveEncryptionKey) {
+    public JceMasterKey masterKeyProvider(SecretKey retrieveEncryptionKey,
+                                  @Value("${dataMask.encryptionContext:default_context}") String encryptionContext,
+                                  @Value("${dataMask.keyId:}") String keyId) {
         return JceMasterKey.getInstance(retrieveEncryptionKey,
-                this.encryptionContext,
-                this.keyId,
+                encryptionContext,
+                keyId,
                 WRAPPING_ALGORITHM);
     }
 
@@ -94,9 +83,7 @@ public class AwsConfiguration {
         if (key.length >= 16) {
             byte[] derivedArray;
             switch (key.length) {
-                case 16:
-                case 24:
-                case 32:
+                case 16, 24, 32:
                     derivedArray = key;
                     break;
                 default:
