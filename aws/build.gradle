@@ -1,5 +1,14 @@
 apply plugin: 'org.springframework.boot'
 
+jar {
+    enabled = true
+    archiveClassifier = ''
+}
+
+bootJar {
+    enabled = false
+}
+
 dependencies {
     api project(":data-mask-core")
     api 'com.github.bancolombia:aws-secrets-manager-sync:4.4.2'
