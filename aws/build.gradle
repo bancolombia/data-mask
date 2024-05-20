@@ -1,9 +1,20 @@
+apply plugin: 'org.springframework.boot'
+
+jar {
+    enabled = true
+    archiveClassifier = ''
+}
+
+bootJar {
+    enabled = false
+}
+
 dependencies {
     api project(":data-mask-core")
-    api 'com.github.bancolombia:aws-secrets-manager-sync:4.1.0'
-    api 'com.amazonaws:aws-encryption-sdk-java:2.4.1'
-    implementation "software.amazon.awssdk:secretsmanager:2.20.94"
-    implementation "software.amazon.awssdk:regions:2.20.94"
+    api 'com.github.bancolombia:aws-secrets-manager-sync:4.4.2'
+    api 'com.amazonaws:aws-encryption-sdk-java:3.0.0'
+    implementation 'software.amazon.awssdk:secretsmanager:2.25.55'
+    implementation 'software.amazon.awssdk:regions:2.25.55'
     implementation 'org.springframework:spring-context'
     testImplementation 'org.springframework:spring-test'
 }

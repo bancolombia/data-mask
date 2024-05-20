@@ -4,6 +4,17 @@
 [contributing]: CONTRIBUTING.md
 [encryption_context]: https://aws.amazon.com/blogs/security/how-to-protect-the-integrity-of-your-encrypted-data-by-using-aws-key-management-service-and-encryptioncontext/
 
+![Maven Central Version](https://img.shields.io/maven-central/v/com.github.bancolombia/data-mask-core)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=bancolombia_data-mask&metric=alert_status)](https://sonarcloud.io/dashboard?id=bancolombia_data-mask)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=bancolombia_data-mask&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=bancolombia_data-mask)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bancolombia_data-mask&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=bancolombia_data-mask)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=bancolombia_data-mask&metric=security_rating)](https://sonarcloud.io/dashboard?id=bancolombia_data-mask)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bancolombia_data-mask&metric=coverage)](https://sonarcloud.io/dashboard?id=bancolombia_data-mask)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=bancolombia_data-mask&metric=bugs)](https://sonarcloud.io/dashboard?id=bancolombia_data-mask)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=bancolombia_data-mask&metric=code_smells)](https://sonarcloud.io/dashboard?id=bancolombia_data-mask)
+[![Scorecards supply-chain security](https://github.com/bancolombia/commons-jms/actions/workflows/scorecards-analysis.yml/badge.svg)](https://github.com/bancolombia/commons-jms/actions/workflows/scorecards-analysis.yml)
+
+
 Utility library to use with Jackson-Databind to provide custom
 POJO/JSON serialization and deserialization aiming to protect
 sensitive data via masking with additional encrypting-decrypting.
