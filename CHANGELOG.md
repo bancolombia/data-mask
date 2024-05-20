@@ -1,5 +1,14 @@
 # Changelog
 
+## [v1.2.2](https://github.com/bancolombia/data-mask/tree/v1.2.2) (2024-05-20)
+
+[Full Changelog](https://github.com/bancolombia/data-mask/compare/v1.2.1...v1.2.2)
+
+**Merged pull requests:**
+
+- fix\(updater\): Add dependency updater [\#17](https://github.com/bancolombia/data-mask/pull/17) ([juancgalvis](https://github.com/juancgalvis))
+- ci\(conditions\): Add commit with github app and skip condition when automatic release [\#16](https://github.com/bancolombia/data-mask/pull/16) ([juancgalvis](https://github.com/juancgalvis))
+
 ## [v1.2.1](https://github.com/bancolombia/data-mask/tree/v1.2.1) (2024-05-03)
 
 [Full Changelog](https://github.com/bancolombia/data-mask/compare/v1.2.0...v1.2.1)
