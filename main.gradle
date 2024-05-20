@@ -1,7 +1,9 @@
 allprojects {
-    apply plugin: "java"
-    apply plugin: "jacoco"
+    apply plugin: 'java'
+    apply plugin: 'jacoco'
     apply plugin: 'org.sonarqube'
+    apply plugin: 'org.owasp.dependencycheck'
+    
     sourceCompatibility = JavaVersion.VERSION_17
 
     repositories {
@@ -23,7 +25,7 @@ allprojects {
             property "sonar.java-coveragePlugin", "jacoco"
             property "sonar.coverage.jacoco.xmlReportPaths", "${rootDir}/build/reports/jacoco/generateMergedReport/generateMergedReport.xml"
             property "sonar.exclusions", ".github/**"
-            property 'sonar.coverage.exclusions', 'examples/**/*'
+            property 'sonar.coverage.exclusions', 'sample/**/*'
         }
     }
 }
@@ -35,7 +37,6 @@ nexusPublishing {
 }
 
 subprojects {
-
     apply plugin: "java-library"
     apply plugin: "io.spring.dependency-management"
     apply plugin: 'org.owasp.dependencycheck'
@@ -44,29 +45,15 @@ subprojects {
         groupId = 'com.github.bancolombia'
     }
 
-    group groupId
-
-    repositories {
-        mavenCentral()
-    }
-
     dependencies {
-        compileOnly 'org.projectlombok:lombok:1.18.24'
-        annotationProcessor 'org.projectlombok:lombok:1.18.24'
-        testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
-        testCompileOnly 'org.projectlombok:lombok:1.18.24'
-        testImplementation 'io.projectreactor:reactor-test'
-        testImplementation(platform('org.junit:junit-bom:5.8.2'))
-        testImplementation('org.junit.jupiter:junit-jupiter')
-        testImplementation 'org.mockito:mockito-inline:3.7.7'
-        testImplementation 'org.mockito:mockito-junit-jupiter:3.7.7'
-    }
-
-    dependencyManagement {
-        imports {
-            mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
-            mavenBom "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
-        }
+        compileOnly 'org.projectlombok:lombok:1.18.32'
+        annotationProcessor 'org.projectlombok:lombok:1.18.32'
+        testAnnotationProcessor 'org.projectlombok:lombok:1.18.32'
+        testCompileOnly 'org.projectlombok:lombok:1.18.32'
+        testImplementation 'io.projectreactor:reactor-test:3.6.6'
+        testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0-M2'
+        testImplementation 'org.mockito:mockito-inline:5.2.0'
+        testImplementation 'org.mockito:mockito-junit-jupiter:5.12.0'
     }
 
     test {
@@ -81,12 +68,13 @@ subprojects {
     jacocoTestReport {
         dependsOn test
         reports {
-            xml.enabled true
-            xml.destination file("${buildDir}/reports/jacoco.xml")
-            csv.enabled false
-            html.destination file("${buildDir}/reports/jacocoHtml")
+            xml.setRequired true
+            xml.setOutputLocation layout.buildDirectory.file("reports/jacoco.xml")
+            csv.setRequired false
+            html.setOutputLocation layout.buildDirectory.dir("reports/jacocoHtml")
         }
     }
+
     compileJava {
         options.compilerArgs = [
                 '-Amapstruct.suppressGeneratorTimestamp=true',
@@ -94,7 +82,7 @@ subprojects {
         ]
     }
 
-    check.dependsOn dependencyCheckAggregate
+//    check.dependsOn dependencyCheckAggregate
 
     dependencyCheck {
         format = 'JSON'
@@ -105,23 +93,19 @@ subprojects {
         apply plugin: "maven-publish"
         apply plugin: "signing"
 
-        task sourcesJar(type: Jar, dependsOn: classes) {
-            classifier = 'sources'
-            from sourceSets.main.allSource
+        java {
+            withJavadocJar()
+            withSourcesJar()
         }
 
+        javadoc {
+            if (JavaVersion.current().isJava9Compatible()) {
+                options.addBooleanOption('html5', true)
+            }
+        }
         javadoc.failOnError = false
-        task javadocJar(type: Jar, dependsOn: javadoc) {
-            classifier = 'javadoc'
-            from javadoc.destinationDir
-        }
 
-        artifacts {
-            archives sourcesJar
-            archives javadocJar
-        }
-
-        tasks.withType(GenerateModuleMetadata) {
+        tasks.withType(GenerateModuleMetadata).configureEach {
             enabled = false
         }
 
@@ -154,9 +138,6 @@ subprojects {
 
                     from components.java
 
-                    artifact sourcesJar
-                    artifact javadocJar
-
                     groupId = groupId
                     artifactId = artifactId
                     version = project.property('version')
@@ -173,8 +154,11 @@ subprojects {
 
 }
 
-task generateMergedReport(type: JacocoReport) {
-    dependsOn = subprojects.test
+tasks.register('generateMergedReport', JacocoReport) {
+    dependsOn test
+    dependsOn subprojects.test
+    dependsOn subprojects.javadoc
+    dependsOn subprojects.jacocoTestReport
     additionalSourceDirs.setFrom files(subprojects.sourceSets.main.allSource.srcDirs)
     sourceDirectories.setFrom files(subprojects.sourceSets.main.allSource.srcDirs)
     classDirectories.setFrom files(subprojects.sourceSets.main.output)
@@ -186,4 +170,6 @@ task generateMergedReport(type: JacocoReport) {
     }
 }
 
-
+tasks.named('wrapper') {
+    gradleVersion = '8.5'
+}

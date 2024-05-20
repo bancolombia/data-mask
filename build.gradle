@@ -1,13 +1,18 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url "https://repo.spring.io/milestone" }
+        maven { url "https://repo.spring.io/snapshot" }
+    }
+}
+
 plugins {
-    id 'java'
-    id 'jacoco'
-    id 'java-library'
-    id 'maven-publish'
-    id "org.sonarqube" version "3.3"
-    id "io.github.gradle-nexus.publish-plugin" version "1.1.0"
-    id "io.spring.dependency-management" version "1.0.11.RELEASE"
-    id 'org.springframework.boot' version "${springBootVersion}" apply false
-    id("org.owasp.dependencycheck") version "8.2.1"
+    id 'org.sonarqube' version '5.0.0.4638'
+    id 'com.github.ben-manes.versions' version '0.51.0'
+    id 'io.github.gradle-nexus.publish-plugin' version '2.0.0'
+    id 'org.springframework.boot' version '3.2.5' apply false
+    id 'org.owasp.dependencycheck' version '9.2.0' apply false
+    id 'co.com.bancolombia.cleanArchitecture' version '3.17.3'
 }
 
 apply from: './main.gradle'
