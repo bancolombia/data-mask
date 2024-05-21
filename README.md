@@ -12,7 +12,7 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bancolombia_data-mask&metric=coverage)](https://sonarcloud.io/dashboard?id=bancolombia_data-mask)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=bancolombia_data-mask&metric=bugs)](https://sonarcloud.io/dashboard?id=bancolombia_data-mask)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=bancolombia_data-mask&metric=code_smells)](https://sonarcloud.io/dashboard?id=bancolombia_data-mask)
-[![Scorecards supply-chain security](https://github.com/bancolombia/commons-jms/actions/workflows/scorecards-analysis.yml/badge.svg)](https://github.com/bancolombia/commons-jms/actions/workflows/scorecards-analysis.yml)
+[![Scorecards supply-chain security](https://github.com/bancolombia/data-mask/actions/workflows/scorecards-analysis.yml/badge.svg)](https://github.com/bancolombia/data-mask/actions/workflows/scorecards-analysis.yml)
 
 
 Utility library to use with Jackson-Databind to provide custom
