@@ -14,18 +14,25 @@ public class StringSerializer extends StdSerializer<String> {
     private MaskingFormat maskingFormat;
     private DataCipher dataCipher;
 
-    public StringSerializer(int leftVisible, int rightVisible, TransformationType transformationType, String format, boolean isEmail, DataCipher dataCipher) {
+    public StringSerializer(int leftVisible,
+                            int rightVisible,
+                            TransformationType transformationType,
+                            String format,
+                            boolean isEmail,
+                            boolean isMultiMask,
+                            String separator,
+                            DataCipher dataCipher) {
         super(String.class);
-        maskingFormat = new MaskingFormat(leftVisible, rightVisible, isEmail, transformationType, format);
+        maskingFormat = new MaskingFormat(leftVisible, rightVisible, isEmail, isMultiMask, separator, transformationType, format);
         this.dataCipher = dataCipher;
     }
 
     @Override
     public void serialize(String value, JsonGenerator generator, SerializerProvider provider) throws IOException {
-        Object resultMask = MaskSerializerCommons.of(maskingFormat,dataCipher).applyMask(value);
-        if(resultMask instanceof String){
-            generator.writeString((String)resultMask);
-        }else {
+        Object resultMask = MaskSerializerCommons.of(maskingFormat, dataCipher).applyMask(value);
+        if (resultMask instanceof String) {
+            generator.writeString((String) resultMask);
+        } else {
             generator.writeObject(resultMask);
         }
     }
