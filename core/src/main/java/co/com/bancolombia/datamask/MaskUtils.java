@@ -15,7 +15,7 @@ public class MaskUtils {
         return MaskUtils.mask(fieldValue, 0, 0);
     }
     public static String mask(String fieldValue, int showFirstDigitCount, int showLastDigitCount) {
-        return MaskUtils.mask(fieldValue, 0, 0, false, null);
+        return MaskUtils.mask(fieldValue, showFirstDigitCount, showLastDigitCount, false, null);
     }
 
     public static String mask(String fieldValue, int showFirstDigitCount, int showLastDigitCount, boolean isMultiMask, String separator) {
