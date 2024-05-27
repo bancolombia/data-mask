@@ -110,13 +110,32 @@ class JacksonJsonProcessorTests {
 
         Company c = new Company("Acme enterprises", "9999888877776666");
         var identifyFieldCard = new IdentifyField("card", QueryType.NAME);
-        var maskFormat = Map.of(identifyFieldCard, new MaskingFormat(3, 4, false, TransformationType.ALL, DataMaskingConstants.ENCRYPTION_AS_OBJECT));
+        var maskFormat = Map.of(identifyFieldCard, new MaskingFormat(3, 4, false, false, null, TransformationType.ALL, DataMaskingConstants.ENCRYPTION_AS_OBJECT));
 
         try {
             String jsonValue = mapper.writeValueAsString(new DataMask<>(c, maskFormat));
             System.out.println(jsonValue);
             assertTrue(jsonValue.contains("\"masked\":\"999*********6666\""));
             assertTrue(jsonValue.contains("\"enc\":\"OTk5OTg4ODg3Nzc3NjY2Ng==\""));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            Assertions.fail();
+        }
+    }
+
+    @Test
+    void testMultiMaskingAsObject() {
+        setCipherMapper(new DummyCipher(), new DummyDecipher());
+
+        Company c = new Company("Acme enterprises", "9999888877776666");
+        var identifyFieldName= new IdentifyField("name", QueryType.NAME);
+        var maskFormat = Map.of(identifyFieldName, new MaskingFormat(3, 0, false, true, " ", TransformationType.ALL, DataMaskingConstants.ENCRYPTION_AS_OBJECT));
+
+        try {
+            String jsonValue = mapper.writeValueAsString(new DataMask<>(c, maskFormat));
+            System.out.println(jsonValue);
+            assertTrue(jsonValue.contains("\"masked\":\"Acm* ent********\""));
+            assertTrue(jsonValue.contains("\"enc\":\"QWNtZSBlbnRlcnByaXNlcw==\""));
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             Assertions.fail();
