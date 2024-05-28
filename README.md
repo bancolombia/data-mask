@@ -206,7 +206,8 @@ __Anotation Properties__
 |  |  |  `false`: serialization should generate masked value and encrypted value. |
 | format | ENCRYPTION_AS_OBJECT | Describes how masked and encrypted data should be serialized. Using `ENCRYPTION_INLINE` means masked and encrypted values together are serialized as string: ```masked_pair=<masked_value>I<encrypted_value>``` |
 |  |  | Using `ENCRYPTION_AS_OBJECT`, means masked and encrypted values are serialized as a json object. |
-
+| isMultiMask  | false                | `true`: Enhanced the data masking capability to be dynamic using the separator property to identify each word separately and allowing masking each one.  Example: H**** w****<br/> `false`: The dynamic data masking is not allowed and the behavior will be as before  Example: Hello******. <br/> **optional** | 
+| separator    | " "                  | With this property you can define the divisor character to use the multimask capability <br/> **optional**                                                                                                                                                                                                       | 
 
 ### D. Use Custom ObjectMapper
 
