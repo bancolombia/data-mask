@@ -15,6 +15,8 @@ public class MaskingFormat {
     private int leftVisible;
     private int rightVisible;
     private Boolean isEmail = false;
+    private Boolean isMultiMask = false;
+    private String separator;
     private TransformationType transformationType = TransformationType.ONLY_MASK;
     private String format = DataMaskingConstants.ENCRYPTION_INLINE;
 
@@ -38,5 +40,14 @@ public class MaskingFormat {
         this.rightVisible = rightVisible;
         this.isEmail = isEmail;
         this.transformationType = transformationType;
+    }
+
+    public MaskingFormat(int leftVisible, int rightVisible, Boolean isEmail, Boolean isMultiMask, String separator, TransformationType transformationType) {
+        this.leftVisible = leftVisible;
+        this.rightVisible = rightVisible;
+        this.isEmail = isEmail;
+        this.isMultiMask = isMultiMask;
+        this.transformationType = transformationType;
+        this.separator = separator;
     }
 }

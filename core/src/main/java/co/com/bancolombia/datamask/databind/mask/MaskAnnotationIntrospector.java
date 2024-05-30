@@ -22,6 +22,8 @@ public class MaskAnnotationIntrospector extends NopAnnotationIntrospector {
                         annotation.queryOnly(),
                         annotation.format(),
                         annotation.isEmail(),
+                        annotation.isMultiMask(),
+                        annotation.separator(),
                         dataCipher);
         }
         return null;

@@ -49,7 +49,11 @@ public class MaskSerializerCommons {
         if (TRUE.equals(maskingFormat.getIsEmail())) {
             return MaskUtils.maskAsEmail(value,maskingFormat.getLeftVisible(), maskingFormat.getRightVisible());
         } else {
-            return MaskUtils.mask(value, maskingFormat.getLeftVisible(), maskingFormat.getRightVisible());
+            return MaskUtils.mask(value,
+                    maskingFormat.getLeftVisible(),
+                    maskingFormat.getRightVisible(),
+                    maskingFormat.getIsMultiMask(),
+                    maskingFormat.getSeparator());
         }
     }
 

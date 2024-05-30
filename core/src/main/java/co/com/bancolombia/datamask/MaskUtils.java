@@ -12,10 +12,13 @@ public class MaskUtils {
     }
 
     public static String mask(String fieldValue) {
-        return MaskUtils.mask(fieldValue, 0,0);
+        return MaskUtils.mask(fieldValue, 0, 0);
+    }
+    public static String mask(String fieldValue, int showFirstDigitCount, int showLastDigitCount) {
+        return MaskUtils.mask(fieldValue, showFirstDigitCount, showLastDigitCount, false, null);
     }
 
-    public static String mask(String fieldValue, int showFirstDigitCount, int showLastDigitCount) {
+    public static String mask(String fieldValue, int showFirstDigitCount, int showLastDigitCount, boolean isMultiMask, String separator) {
         if (StringUtils.isBlank(fieldValue))
             return fieldValue;
 
@@ -23,11 +26,25 @@ public class MaskUtils {
         var rightCount = cleanIntParam(showLastDigitCount);
         int length = fieldValue.length();
         int shows = leftCount + rightCount;
-        int hidden = length-shows;
-        if(shows >= length || (leftCount == 0 && rightCount == 0)){
-            return StringUtils.repeat("*",length);
+        int hidden = length - shows;
+        if (shows >= length || (leftCount == 0 && rightCount == 0)) {
+            return StringUtils.repeat("*", length);
         }
-        return StringUtils.overlay(fieldValue,StringUtils.repeat("*",hidden) ,leftCount, leftCount + hidden);
+        if (isMultiMask && fieldValue.contains(separator)) {
+            String[] parts = fieldValue.split(separator, -1);
+            StringBuilder result = new StringBuilder();
+
+            for (String part : parts) {
+                result.append(mask(part, showFirstDigitCount, showLastDigitCount,false, null));
+                result.append(separator);
+            }
+
+            result.deleteCharAt(result.length() - 1);
+            return result.toString();
+        } else {
+            return StringUtils.overlay(fieldValue, StringUtils.repeat("*", hidden), leftCount, leftCount + hidden);
+        }
+
     }
 
     public static String maskAsEmail(String fieldValue) {
@@ -55,7 +72,7 @@ public class MaskUtils {
     }
 
     public static String[] split(String input) {
-        return input.replace(DataMaskingConstants.MASKING_PREFIX,"")
+        return input.replace(DataMaskingConstants.MASKING_PREFIX, "")
                 .split("\\|");
     }
 
@@ -63,7 +80,7 @@ public class MaskUtils {
         return Optional.of(node)
                 .filter(n -> n.getNodeType().equals(JsonNodeType.OBJECT))
                 .map(n -> n.findValue(DataMaskingConstants.MASKING_ATTR) != null
-                        && n.findValue(DataMaskingConstants.ENCRYPTED_ATTR) !=null)
+                        && n.findValue(DataMaskingConstants.ENCRYPTED_ATTR) != null)
                 .orElse(false);
     }
 }

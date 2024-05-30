@@ -14,5 +14,7 @@ public @interface Mask {
     int rightVisible() default 0;
     boolean isEmail() default false;
     TransformationType queryOnly() default TransformationType.ONLY_MASK;
+    boolean isMultiMask() default false;
+    String separator() default " ";
     String format() default DataMaskingConstants.ENCRYPTION_INLINE;
 }
