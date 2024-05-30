@@ -1,5 +1,14 @@
 # Changelog
 
+## [v1.3.0](https://github.com/bancolombia/data-mask/tree/v1.3.0) (2024-05-30)
+
+[Full Changelog](https://github.com/bancolombia/data-mask/compare/v1.2.4...v1.3.0)
+
+**Merged pull requests:**
+
+- ci\(condition\): run tasks only if master [\#21](https://github.com/bancolombia/data-mask/pull/21) ([juancgalvis](https://github.com/juancgalvis))
+- feat: enable multimasking function [\#20](https://github.com/bancolombia/data-mask/pull/20) ([JEZAPAT](https://github.com/JEZAPAT))
+
 ## [v1.2.4](https://github.com/bancolombia/data-mask/tree/v1.2.4) (2024-05-24)
 
 [Full Changelog](https://github.com/bancolombia/data-mask/compare/v1.2.3...v1.2.4)
