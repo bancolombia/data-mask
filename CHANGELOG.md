@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.3.5](https://github.com/bancolombia/data-mask/tree/v1.3.5) (2024-06-21)
+
+[Full Changelog](https://github.com/bancolombia/data-mask/compare/v1.3.4...v1.3.5)
+
 ## [v1.3.4](https://github.com/bancolombia/data-mask/tree/v1.3.4) (2024-06-21)
 
 [Full Changelog](https://github.com/bancolombia/data-mask/compare/v1.3.3...v1.3.4)
