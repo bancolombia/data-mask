@@ -46,12 +46,12 @@ subprojects {
     }
 
     dependencies {
-        compileOnly 'org.projectlombok:lombok:1.18.32'
-        annotationProcessor 'org.projectlombok:lombok:1.18.32'
-        testAnnotationProcessor 'org.projectlombok:lombok:1.18.32'
-        testCompileOnly 'org.projectlombok:lombok:1.18.32'
+        compileOnly 'org.projectlombok:lombok:1.18.34'
+        annotationProcessor 'org.projectlombok:lombok:1.18.34'
+        testAnnotationProcessor 'org.projectlombok:lombok:1.18.34'
+        testCompileOnly 'org.projectlombok:lombok:1.18.34'
         testImplementation 'io.projectreactor:reactor-test:3.6.7'
-        testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0-M2'
+        testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
         testImplementation 'org.mockito:mockito-inline:5.2.0'
         testImplementation 'org.mockito:mockito-junit-jupiter:5.12.0'
     }
