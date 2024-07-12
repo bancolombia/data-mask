@@ -11,10 +11,10 @@ bootJar {
 
 dependencies {
     api project(":data-mask-core")
-    api 'com.github.bancolombia:aws-secrets-manager-sync:4.4.11'
+    api 'com.github.bancolombia:aws-secrets-manager-sync:4.4.12'
     api 'com.amazonaws:aws-encryption-sdk-java:3.0.1'
-    implementation 'software.amazon.awssdk:secretsmanager:2.26.15'
-    implementation 'software.amazon.awssdk:regions:2.26.15'
+    implementation 'software.amazon.awssdk:secretsmanager:2.26.19'
+    implementation 'software.amazon.awssdk:regions:2.26.19'
     implementation 'org.springframework:spring-context'
     testImplementation 'org.springframework:spring-test'
 }
