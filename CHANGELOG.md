@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.3.15](https://github.com/bancolombia/data-mask/tree/v1.3.15) (2024-08-30)
+
+[Full Changelog](https://github.com/bancolombia/data-mask/compare/v1.3.14...v1.3.15)
+
+**Merged pull requests:**
+
+- fix\(deps\): update dependencies [\#34](https://github.com/bancolombia/data-mask/pull/34) ([app-toolkit-opensource-innersource[bot]](https://github.com/apps/app-toolkit-opensource-innersource))
+
 ## [v1.3.14](https://github.com/bancolombia/data-mask/tree/v1.3.14) (2024-08-23)
 
 [Full Changelog](https://github.com/bancolombia/data-mask/compare/v1.3.13...v1.3.14)
