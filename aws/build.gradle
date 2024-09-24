@@ -11,7 +11,7 @@ bootJar {
 
 dependencies {
     api project(":data-mask-core")
-    api 'com.github.bancolombia:aws-secrets-manager-sync:4.4.19'
+    api 'com.github.bancolombia:aws-secrets-manager-sync:4.4.20'
     api 'com.amazonaws:aws-encryption-sdk-java:3.0.1'
     implementation 'software.amazon.awssdk:secretsmanager:2.27.20'
     implementation 'software.amazon.awssdk:regions:2.27.20'
