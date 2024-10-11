@@ -50,10 +50,10 @@ subprojects {
         annotationProcessor 'org.projectlombok:lombok:1.18.34'
         testAnnotationProcessor 'org.projectlombok:lombok:1.18.34'
         testCompileOnly 'org.projectlombok:lombok:1.18.34'
-        testImplementation 'io.projectreactor:reactor-test:3.6.9'
-        testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
+        testImplementation 'io.projectreactor:reactor-test:3.6.10'
+        testImplementation 'org.junit.jupiter:junit-jupiter:5.11.2'
         testImplementation 'org.mockito:mockito-inline:5.2.0'
-        testImplementation 'org.mockito:mockito-junit-jupiter:5.13.0'
+        testImplementation 'org.mockito:mockito-junit-jupiter:5.14.1'
     }
 
     test {
