@@ -53,7 +53,7 @@ subprojects {
         testImplementation 'io.projectreactor:reactor-test:3.7.1'
         testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
         testImplementation 'org.mockito:mockito-inline:5.2.0'
-        testImplementation 'org.mockito:mockito-junit-jupiter:5.14.2'
+        testImplementation 'org.mockito:mockito-junit-jupiter:5.15.2'
     }
 
     test {
