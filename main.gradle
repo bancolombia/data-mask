@@ -171,5 +171,5 @@ tasks.register('generateMergedReport', JacocoReport) {
 }
 
 tasks.named('wrapper') {
-    gradleVersion = '8.5'
+    gradleVersion = '8.11.1'
 }
