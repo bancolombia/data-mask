@@ -45,7 +45,6 @@ public class JsonDeserializer extends StdSerializer<DataUnmasked> {
         Map<IdentifyField, MaskingFormat> values = value.getFields();
         findFields(objectNode, values);
         mapper.writeValue(generator, objectNode);
-//        generator.writeObject(objectNode);
     }
 
     private void findFields(JsonNode node, Map<IdentifyField, MaskingFormat> maskField) {
@@ -88,8 +87,8 @@ public class JsonDeserializer extends StdSerializer<DataUnmasked> {
         } else if (node.isString() && identifyField != null && maskField.containsKey(identifyField)) {
             if (isEncryptedString(node)) {
                 String[] maskedValuesInfo = MaskUtils.split(node.asString());
-                var val = maskedValuesInfo[1];
-                decipherValue(val, identifyField.getQuery(), parent);
+                var value = maskedValuesInfo[1];
+                decipherValue(value, identifyField.getQuery(), parent);
                 return;
             }
             decipherValue(node.stringValue(), identifyField.getQuery(), parent);
@@ -135,8 +134,8 @@ public class JsonDeserializer extends StdSerializer<DataUnmasked> {
                     return;
                 } else if (isEncryptedString(previousContext)) {
                     String[] maskedValuesInfo = MaskUtils.split(previousContext.asString());
-                    var val = maskedValuesInfo[1];
-                    decipherValue(val, pathPart, nodeParent);
+                    var value = maskedValuesInfo[1];
+                    decipherValue(value, pathPart, nodeParent);
                     return;
                 }
                 this.decipherValue(previousContext.stringValue(), pathPart, nodeParent);

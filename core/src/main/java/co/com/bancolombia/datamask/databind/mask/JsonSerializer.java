@@ -133,16 +133,15 @@ public class JsonSerializer extends StdSerializer<DataMask<?>> {
     }
 
     private void applyMask(String value, MaskingFormat format, String field, ObjectNode node) {
-        Object resultMask;
         try {
-            resultMask = MaskSerializerCommons.of(format, dataCipher).applyMask(value);
-        } catch (Exception e) {
-            throw new RuntimeException("Error applying mask", e);
-        }
-        if (resultMask instanceof String) {
-            node.put(field, (String) resultMask);
-        } else {
-            node.putPOJO(field, resultMask);
+            Object resultMask = MaskSerializerCommons.of(format, dataCipher).applyMask(value);
+            if (resultMask instanceof String) {
+                node.put(field, (String) resultMask);
+            } else {
+                node.putPOJO(field, resultMask);
+            }
+        } catch (Exception exception) {
+            throw new RuntimeException(exception);
         }
     }
 }

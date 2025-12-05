@@ -1,3 +1,5 @@
+apply plugin: 'org.springframework.boot'
+
 dependencies {
     implementation project(':data-mask-aws')
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
