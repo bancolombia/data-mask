@@ -2,20 +2,18 @@ package co.com.bancolombia.datamask.databind.mask;
 
 import co.com.bancolombia.datamask.cipher.DataCipher;
 import co.com.bancolombia.datamask.databind.util.QueryType;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.ObjectCodec;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.ser.std.StdSerializer;
 
-import java.io.IOException;
 import java.util.Map;
 
-public class JsonSerializer extends StdSerializer<DataMask> {
+public class JsonSerializer extends StdSerializer<DataMask<?>> {
 
     public static final String SEPARATOR = "/";
     public static final String FORMAT_EXCEPTION = "DataMask only support fields in String format";
@@ -27,12 +25,14 @@ public class JsonSerializer extends StdSerializer<DataMask> {
         this.dataCipher = dataCipher;
     }
 
+
     @Override
-    public void serialize(DataMask value, JsonGenerator generator, SerializerProvider provider) throws IOException {
-        var objectNode = convertValue(value.getData(), generator.getCodec());
+    public void serialize(DataMask value, JsonGenerator generator, SerializationContext provider) throws JacksonException {
+        JsonMapper mapper = new JsonMapper();
+        JsonNode objectNode = convertValue(value.getData(), mapper);
         Map<IdentifyField, MaskingFormat> values = value.getFields();
         findFields(objectNode, values);
-        generator.writeObject(objectNode);
+        generator.writeTree(objectNode);
     }
 
     private void findFields(JsonNode node, Map<IdentifyField, MaskingFormat> maskField) {
@@ -58,7 +58,7 @@ public class JsonSerializer extends StdSerializer<DataMask> {
         var newContext = node;
         for (String element : querySplit) {
             pathPart = element;
-            if (!pathPart.equals("")) {
+            if (!pathPart.isEmpty()) {
                 if (arrayNodeFound) {
                     nodeParent = findArrayParent(nodeParentArray, pathPart, nodeParent);
                     previousContext = nodeParent;
@@ -81,7 +81,7 @@ public class JsonSerializer extends StdSerializer<DataMask> {
             if (previousContext.isNumber()) {
                 throw new IllegalArgumentException(FORMAT_EXCEPTION);
             } else {
-                this.applyMask(previousContext.textValue(), maskField.get(identifyField),
+                this.applyMask(previousContext.stringValue(), maskField.get(identifyField),
                         pathPart, (ObjectNode) nodeParent);
             }
         }
@@ -110,37 +110,39 @@ public class JsonSerializer extends StdSerializer<DataMask> {
 
     private void findFieldsForName(JsonNode node, Map<IdentifyField, MaskingFormat> maskField,
                                    IdentifyField identifyField, JsonNode parent) {
-        if (node.isArray()) {
-            node.elements().forEachRemaining((element) ->
-                    this.findFieldsForName(element, maskField, null, node));
-        } else if (node.isObject()) {
-            node.fields().forEachRemaining((field) -> this.findFieldsForName(field.getValue(), maskField,
-                    new IdentifyField(field.getKey(), QueryType.NAME), node));
-        } else if (node.isTextual() && identifyField != null && maskField.containsKey(identifyField)) {
-            this.applyMask(node.textValue(), maskField.get(identifyField),
+        if (node instanceof ArrayNode array) {
+            for (int i = 0; i < array.size(); i++) {
+                this.findFieldsForName(array.get(i), maskField, null, node);
+            }
+        } else if (node instanceof ObjectNode obj) {
+            for (String key : obj.propertyNames()) {
+                this.findFieldsForName(obj.get(key), maskField,
+                        new IdentifyField(key, QueryType.NAME), node);
+            }
+        } else if (node.isString() && identifyField != null && maskField.containsKey(identifyField)) {
+            this.applyMask(node.stringValue(), maskField.get(identifyField),
                     identifyField.getQuery(), (ObjectNode) parent);
         }
-
     }
 
-    private JsonNode convertValue(Object node, ObjectCodec objectCodec) throws JsonProcessingException {
-        ObjectMapper mapper = (ObjectMapper) objectCodec;
+    private JsonNode convertValue(Object node, JsonMapper mapper) {
         if (node instanceof String) {
             return mapper.readTree(node.toString());
         }
-        return mapper.convertValue(node, JsonNode.class);
+        return mapper.valueToTree(node);
     }
 
     private void applyMask(String value, MaskingFormat format, String field, ObjectNode node) {
+        Object resultMask;
         try {
-            Object resultMask = MaskSerializerCommons.of(format, dataCipher).applyMask(value);
-            if (resultMask instanceof String) {
-                node.put(field, (String) resultMask);
-            } else {
-                node.putPOJO(field, resultMask);
-            }
-        } catch (IOException exception) {
-            throw new RuntimeException(exception);
+            resultMask = MaskSerializerCommons.of(format, dataCipher).applyMask(value);
+        } catch (Exception e) {
+            throw new RuntimeException("Error applying mask", e);
+        }
+        if (resultMask instanceof String) {
+            node.put(field, (String) resultMask);
+        } else {
+            node.putPOJO(field, resultMask);
         }
     }
 }

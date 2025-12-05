@@ -1,7 +1,7 @@
 package co.com.bancolombia.datamask;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeType;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Optional;

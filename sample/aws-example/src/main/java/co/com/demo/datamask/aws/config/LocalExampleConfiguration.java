@@ -5,7 +5,7 @@ import co.com.bancolombia.datamask.cipher.DataCipher;
 import co.com.bancolombia.datamask.cipher.DataDecipher;
 import co.com.bancolombia.datamask.databind.MaskingObjectMapper;
 import co.com.demo.datamask.aws.handler.DemoHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;

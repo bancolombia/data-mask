@@ -137,7 +137,7 @@ With maven
 This library depends on:
 
 - `org.apache.commons:commons-lang3`
-- `com.fasterxml.jackson.core:jackson-databind`
+- `tools.jackson.core:jackson-databind`
 
 ## Using Data-Mask
 

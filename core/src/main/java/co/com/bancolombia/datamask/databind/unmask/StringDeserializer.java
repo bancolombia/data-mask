@@ -3,14 +3,13 @@ package co.com.bancolombia.datamask.databind.unmask;
 import co.com.bancolombia.datamask.DataMaskingConstants;
 import co.com.bancolombia.datamask.MaskUtils;
 import co.com.bancolombia.datamask.cipher.DataDecipher;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
 import org.apache.commons.lang3.StringUtils;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.deser.std.StdDeserializer;
+import tools.jackson.databind.node.JsonNodeType;
 
-import java.io.IOException;
 import java.util.Optional;
 
 public class StringDeserializer extends StdDeserializer<String> {
@@ -24,26 +23,25 @@ public class StringDeserializer extends StdDeserializer<String> {
     }
 
     @Override
-    public String deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        JsonNode node = p.getCodec().readTree(p);
+    public String deserialize(JsonParser p, DeserializationContext ctxt) {
+        JsonNode node = p.readValueAsTree();
         if (isEncryptedString(node)) {
-            String[] maskedValuesInfo = MaskUtils.split(node.asText());
+            String[] maskedValuesInfo = MaskUtils.split(node.asString());
             return dataDecipher.decipher(maskedValuesInfo[1]);
         } else if (MaskUtils.isEncryptedObject(node)) {
-            return dataDecipher.decipher(node.findValue(DataMaskingConstants.ENCRYPTED_ATTR).asText());
+            return dataDecipher.decipher(node.findValue(DataMaskingConstants.ENCRYPTED_ATTR).asString());
         } else {
-            return node.asText();
+            return node.asString();
         }
     }
 
     private boolean isEncryptedString(JsonNode node) {
         return Optional.of(node)
                 .filter(n -> n.getNodeType().equals(JsonNodeType.STRING))
-                .map(JsonNode::asText)
+                .map(JsonNode::asString)
                 .filter(StringUtils::isNotBlank)
                 .map(t -> t.startsWith(DataMaskingConstants.MASKING_PREFIX))
                 .orElse(false);
     }
-
 
 }

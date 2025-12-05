@@ -6,29 +6,73 @@ import co.com.bancolombia.datamask.cipher.NoOpCipher;
 import co.com.bancolombia.datamask.cipher.NoOpDecipher;
 import co.com.bancolombia.datamask.databind.mask.MaskAnnotationIntrospector;
 import co.com.bancolombia.datamask.databind.unmask.UnmaskAnnotationIntrospector;
-import com.fasterxml.jackson.databind.AnnotationIntrospector;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.TokenStreamFactory;
+import tools.jackson.databind.AnnotationIntrospector;
+import tools.jackson.databind.cfg.MapperBuilder;
+import tools.jackson.databind.cfg.MapperBuilderState;
+import tools.jackson.databind.json.JsonMapper;
 
-import static com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair.pair;
+import java.io.Serial;
 
-public class MaskingObjectMapper extends ObjectMapper {
+import static tools.jackson.databind.AnnotationIntrospector.pair;
+
+public class MaskingObjectMapper extends JsonMapper {
 
     private static final long serialVersionUID = -1620079742091329228L;
-
-    public MaskingObjectMapper(DataCipher cipher, DataDecipher decipher) {
-        super();
-
-        MaskAnnotationIntrospector maskAnnotationIntrospector = new MaskAnnotationIntrospector(cipher);
-        AnnotationIntrospector pair = pair(this.getSerializationConfig().getAnnotationIntrospector(), maskAnnotationIntrospector);
-
-        UnmaskAnnotationIntrospector unmaskAnnotationIntrospector = new UnmaskAnnotationIntrospector(decipher);
-        AnnotationIntrospector pair2 = pair(this.getDeserializationConfig().getAnnotationIntrospector(), unmaskAnnotationIntrospector);
-
-        this.setAnnotationIntrospectors(pair, pair2);
-    }
 
     public MaskingObjectMapper() {
         this(new NoOpCipher(), new NoOpDecipher());
     }
+
+    public MaskingObjectMapper(DataCipher cipher, DataDecipher decipher) {
+//        this(new PrivateBuilder(new JsonFactory(), cipher, decipher));
+        super(JsonMapper.builder().annotationIntrospector(pair(new MaskAnnotationIntrospector(cipher),
+                new UnmaskAnnotationIntrospector(decipher))));
+    }
+
+//    protected MaskingObjectMapper(PrivateBuilder builder) {
+//        super(builder);
+//    }
+
+//    protected static class PrivateBuilder extends MapperBuilder<MaskingObjectMapper, PrivateBuilder> {
+//        private final AnnotationIntrospector introspector;
+//
+//        public PrivateBuilder(TokenStreamFactory tsf, DataCipher cipher, DataDecipher decipher) {
+//            super(tsf);
+//            MaskAnnotationIntrospector maskAnnotationIntrospector = new MaskAnnotationIntrospector(cipher);
+//            UnmaskAnnotationIntrospector unmaskAnnotationIntrospector = new UnmaskAnnotationIntrospector(decipher);
+//            introspector = pair(maskAnnotationIntrospector, unmaskAnnotationIntrospector);
+//        }
+//
+//        @Override
+//        public MaskingObjectMapper build() {
+//            return new MaskingObjectMapper(this.annotationIntrospector(introspector));
+//        }
+//
+//        @Override
+//        protected MapperBuilderState _saveState() {
+//            return new PrivateBuilder.StateImpl(this, introspector);
+//        }
+//
+//        public PrivateBuilder(MapperBuilderState state, AnnotationIntrospector introspector) {
+//            super(state);
+//            this.introspector = introspector;
+//        }
+//
+//        static class StateImpl extends MapperBuilderState {
+//            private final AnnotationIntrospector introspector;
+//
+//            public StateImpl(PrivateBuilder b, AnnotationIntrospector introspector) {
+//                super(b);
+//                this.introspector = introspector;
+//            }
+//
+//            @Serial
+//            @Override
+//            protected Object readResolve() {
+//                return new PrivateBuilder(this, introspector).build();
+//            }
+//        }
+//    }
 
 }
