@@ -10,7 +10,7 @@ allprojects {
 
     group 'com.github.bancolombia'
 
-    sonarqube {
+    sonar {
         properties {
             property "sonar.sourceEncoding", "UTF-8"
             property "sonar.projectKey", "bancolombia_data-mask"
