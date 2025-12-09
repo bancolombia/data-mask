@@ -7,21 +7,20 @@ import co.com.bancolombia.datamask.databind.mask.IdentifyField;
 import co.com.bancolombia.datamask.databind.mask.MaskingFormat;
 import co.com.bancolombia.datamask.databind.util.QueryType;
 import co.com.bancolombia.datamask.databind.util.TransformationType;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.ObjectCodec;
-import com.fasterxml.jackson.core.TreeNode;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.apache.commons.lang3.StringUtils;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.TreeNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeType;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
+import tools.jackson.databind.ser.std.StdSerializer;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
@@ -40,11 +39,12 @@ public class JsonDeserializer extends StdSerializer<DataUnmasked> {
     }
 
     @Override
-    public void serialize(DataUnmasked value, JsonGenerator generator, SerializerProvider provider) throws IOException {
-        var objectNode = convertValue(value.getData(), generator.getCodec());
+    public void serialize(DataUnmasked value, JsonGenerator generator, SerializationContext provider) throws JacksonException {
+        JsonMapper mapper = new JsonMapper();
+        var objectNode = convertValue(value.getData(), mapper);
         Map<IdentifyField, MaskingFormat> values = value.getFields();
         findFields(objectNode, values);
-        generator.writeObject(objectNode);
+        mapper.writeValue(generator, objectNode);
     }
 
     private void findFields(JsonNode node, Map<IdentifyField, MaskingFormat> maskField) {
@@ -71,25 +71,27 @@ public class JsonDeserializer extends StdSerializer<DataUnmasked> {
                 && maskField.get(identifyField).getTransformationType().equals(TransformationType.ONLY_MASK)) {
             throw new IllegalCallerException(INVALID_CALLER_EXCEPTION);
         }
-        if (node.isArray()) {
-            node.elements().forEachRemaining((element) ->
-                    this.findFieldsForName(element, maskField, null, node));
-        } else if (node.isObject()) {
-            if (isEncryptedObject(node)) {
-                decipherValueObject(node, identifyField.getQuery(), (ObjectNode) parent);
-            } else {
-                node.fields().forEachRemaining((field) -> this.findFieldsForName(field.getValue(), maskField,
-                        new IdentifyField(field.getKey(), QueryType.NAME), node));
+        if (node instanceof ArrayNode array) {
+            for (int i = 0; i < array.size(); i++) {
+                this.findFieldsForName(array.get(i), maskField, null, node);
             }
-
-        } else if (node.isTextual() && identifyField != null && maskField.containsKey(identifyField)) {
+        } else if (node instanceof ObjectNode) {
+            if (isEncryptedObject(node)) {
+                decipherValueObject(node, identifyField.getQuery(), parent);
+            } else {
+                for (String key : node.propertyNames()) {
+                    this.findFieldsForName(node.get(key), maskField,
+                            new IdentifyField(key, QueryType.NAME), node);
+                }
+            }
+        } else if (node.isString() && identifyField != null && maskField.containsKey(identifyField)) {
             if (isEncryptedString(node)) {
-                String[] maskedValuesInfo = MaskUtils.split(node.asText());
+                String[] maskedValuesInfo = MaskUtils.split(node.asString());
                 var value = maskedValuesInfo[1];
                 decipherValue(value, identifyField.getQuery(), parent);
                 return;
             }
-            decipherValue(node.textValue(), identifyField.getQuery(), (ObjectNode) parent);
+            decipherValue(node.stringValue(), identifyField.getQuery(), parent);
         }
 
     }
@@ -104,7 +106,7 @@ public class JsonDeserializer extends StdSerializer<DataUnmasked> {
         var newContext = node;
         for (String element : querySplit) {
             pathPart = element;
-            if (!pathPart.equals("")) {
+            if (!pathPart.isEmpty()) {
                 if (arrayNodeFound) {
                     nodeParent = findArrayParent(nodeParentArray, pathPart, nodeParent);
                     previousContext = nodeParent;
@@ -131,12 +133,12 @@ public class JsonDeserializer extends StdSerializer<DataUnmasked> {
                     decipherValueObject(node, pathPart, nodeParent);
                     return;
                 } else if (isEncryptedString(previousContext)) {
-                    String[] maskedValuesInfo = MaskUtils.split(previousContext.asText());
+                    String[] maskedValuesInfo = MaskUtils.split(previousContext.asString());
                     var value = maskedValuesInfo[1];
                     decipherValue(value, pathPart, nodeParent);
                     return;
                 }
-                this.decipherValue(previousContext.textValue(), pathPart, (ObjectNode) nodeParent);
+                this.decipherValue(previousContext.stringValue(), pathPart, nodeParent);
             }
         }
     }
@@ -163,26 +165,27 @@ public class JsonDeserializer extends StdSerializer<DataUnmasked> {
     }
 
     private void decipherValueObject(JsonNode node, String fieldName, JsonNode parent) {
-        ((ObjectNode) parent).put(fieldName, dataDecipher.decipher(node.findValue(DataMaskingConstants.ENCRYPTED_ATTR).asText()));
+        ((ObjectNode) parent).put(fieldName,
+                dataDecipher.decipher(node.findValue(DataMaskingConstants.ENCRYPTED_ATTR).asString()));
     }
 
     private void decipherValue(String value, String fieldName, JsonNode parent) {
         ((ObjectNode) parent).put(fieldName, dataDecipher.decipher(value));
     }
 
-    private JsonNode convertValue(Object node, ObjectCodec objectCodec) throws JsonProcessingException {
-        ObjectMapper mapper = (ObjectMapper) objectCodec;
+    private JsonNode convertValue(Object node, ObjectMapper mapper) {
         if (node instanceof String) {
             return mapper.readTree(node.toString());
         }
         return mapper.convertValue(node, JsonNode.class);
     }
 
+
     private boolean isEncryptedString(TreeNode node) {
         return Optional.of(node)
-                .filter(n -> n instanceof TextNode)
-                .map(nodes -> (TextNode) nodes)
-                .map(JsonNode::asText)
+                .filter(n -> n instanceof StringNode)
+                .map(nodes -> (StringNode) nodes)
+                .map(JsonNode::asString)
                 .filter(StringUtils::isNotBlank)
                 .map(t -> t.startsWith(DataMaskingConstants.MASKING_PREFIX))
                 .orElse(false);
