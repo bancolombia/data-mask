@@ -349,6 +349,10 @@ Passed via configuration `application.properties` or `application.yaml`
 
 ### Use with Spring-Boot
 
+#### Spring Boot 3
+
+Use versions 1.x.x of this library.
+
 Just declare the customized Object Mapper as a Bean, and add **@Primary** annotation to use instead of the default ObjectMapper.
 
 ```java
@@ -356,6 +360,34 @@ Just declare the customized Object Mapper as a Bean, and add **@Primary** annota
 @Primary
 public ObjectMapper objectMapper(DataCipher awsCipher, DataDecipher awsDecipher) {
     return new MaskingObjectMapper(awsCipher, awsDecipher);
+}
+```
+
+Then is all the same as described earlier in this guide in section [C. Decorate-POJOs](#c-decorate-pojos)
+
+You also can use versions 2.x.x of this library. But you need to include the dependency of jackson 3 and use 
+directly ObjectMapper from jackson 3.
+
+```gradle
+implementation 'tools.jackson.core:jackson-databind:3.0.3'
+```
+
+```java
+tools.jackson.databind.ObjectMapper mapper = new MaskingObjectMapper(awsCipher, awsDecipher);
+String maskedJson = mapper.writeValueAsString(model);
+```
+
+#### Spring Boot 4
+
+Use versions 2.x.x of this library.
+
+Just declare the customized JsonMapper as a Bean, and add **@Primary** annotation to use instead of the default JsonMapper.
+
+```java
+@Bean
+@Primary
+public JsonMapper jsonMapper(DataCipher awsCipher, DataDecipher awsDecipher) {
+  return new MaskingObjectMapper(awsCipher, awsDecipher);
 }
 ```
 
