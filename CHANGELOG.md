@@ -1,5 +1,13 @@
 # Changelog
 
+## [v2.0.0](https://github.com/bancolombia/data-mask/tree/v2.0.0) (2025-12-09)
+
+[Full Changelog](https://github.com/bancolombia/data-mask/compare/v1.3.31...v2.0.0)
+
+**Merged pull requests:**
+
+- feat!: update spring boot 4 and jackson 3 dependencies [\#52](https://github.com/bancolombia/data-mask/pull/52) ([juancgalvis](https://github.com/juancgalvis))
+
 ## [v1.3.31](https://github.com/bancolombia/data-mask/tree/v1.3.31) (2025-11-13)
 
 [Full Changelog](https://github.com/bancolombia/data-mask/compare/v1.3.30...v1.3.31)
