@@ -13,8 +13,8 @@ dependencies {
     api project(":data-mask-core")
     api 'com.github.bancolombia:aws-secrets-manager-sync:4.5.0'
     api 'com.amazonaws:aws-encryption-sdk-java:3.0.2'
-    implementation 'software.amazon.awssdk:secretsmanager:2.40.4'
-    implementation 'software.amazon.awssdk:regions:2.40.4'
+    implementation 'software.amazon.awssdk:secretsmanager:2.40.12'
+    implementation 'software.amazon.awssdk:regions:2.40.12'
     implementation 'org.springframework:spring-context'
     testImplementation 'org.springframework:spring-test'
 }
