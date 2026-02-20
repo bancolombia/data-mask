@@ -51,8 +51,8 @@ subprojects {
         annotationProcessor 'org.projectlombok:lombok:1.18.42'
         testAnnotationProcessor 'org.projectlombok:lombok:1.18.42'
         testCompileOnly 'org.projectlombok:lombok:1.18.42'
-        testImplementation 'io.projectreactor:reactor-test:3.8.1'
-        testImplementation platform('org.junit:junit-bom:6.0.1')
+        testImplementation 'io.projectreactor:reactor-test:3.8.3'
+        testImplementation platform('org.junit:junit-bom:6.0.3')
         testImplementation 'org.junit.jupiter:junit-jupiter-engine'
         testImplementation 'org.junit.jupiter:junit-jupiter-params'
         testImplementation 'org.junit.platform:junit-platform-launcher'
