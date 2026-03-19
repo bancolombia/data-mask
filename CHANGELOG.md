@@ -1,5 +1,15 @@
 # Changelog
 
+## [v2.0.2](https://github.com/bancolombia/data-mask/tree/v2.0.2) (2026-03-19)
+
+[Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.1...v2.0.2)
+
+**Merged pull requests:**
+
+- ci: update GitHub app token action [\#56](https://github.com/bancolombia/data-mask/pull/56) ([luisgomez29](https://github.com/luisgomez29))
+- chore: update dependencies and improve documentation [\#55](https://github.com/bancolombia/data-mask/pull/55) ([luisgomez29](https://github.com/luisgomez29))
+- fix\(deps\): update dependencies [\#54](https://github.com/bancolombia/data-mask/pull/54) ([app-toolkit-opensource-innersource[bot]](https://github.com/apps/app-toolkit-opensource-innersource))
+
 ## [v2.0.1](https://github.com/bancolombia/data-mask/tree/v2.0.1) (2025-12-19)
 
 [Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.0...v2.0.1)
