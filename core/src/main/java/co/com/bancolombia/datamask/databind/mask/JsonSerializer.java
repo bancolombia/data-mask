@@ -3,6 +3,7 @@ package co.com.bancolombia.datamask.databind.mask;
 import co.com.bancolombia.datamask.cipher.DataCipher;
 import co.com.bancolombia.datamask.databind.util.JsonNodePathUtils;
 import co.com.bancolombia.datamask.databind.util.QueryType;
+import co.com.bancolombia.datamask.exceptions.DataMaskException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.JsonNode;
@@ -18,7 +19,7 @@ public class JsonSerializer extends StdSerializer<DataMask<?>> {
 
     private final DataCipher dataCipher;
 
-    public JsonSerializer(Class<DataMask> dataMaskClass, DataCipher dataCipher) {
+    public JsonSerializer(Class<DataMask> dataMaskClass, DataCipher dataCipher) { // NOSONAR
         super(dataMaskClass);
         this.dataCipher = dataCipher;
     }
@@ -86,7 +87,7 @@ public class JsonSerializer extends StdSerializer<DataMask<?>> {
                 node.putPOJO(field, resultMask);
             }
         } catch (Exception exception) {
-            throw new RuntimeException(exception);
+            throw new DataMaskException(exception);
         }
     }
 }
