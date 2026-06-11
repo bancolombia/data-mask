@@ -33,8 +33,8 @@ public class StringSerializer extends StdSerializer<String> {
     public void serialize(String value, JsonGenerator generator, SerializationContext provider) throws JacksonException {
         try {
             Object resultMask = MaskSerializerCommons.of(maskingFormat, dataCipher).applyMask(value);
-            if (resultMask instanceof String) {
-                generator.writeString((String) resultMask);
+            if (resultMask instanceof String resultMaskStr) {
+                generator.writeString(resultMaskStr);
             } else {
                 MAPPER.writeValue(generator, resultMask);
             }
