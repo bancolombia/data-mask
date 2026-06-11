@@ -1,5 +1,13 @@
 # Changelog
 
+## [v2.0.3](https://github.com/bancolombia/data-mask/tree/v2.0.3) (2026-06-11)
+
+[Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.2...v2.0.3)
+
+**Merged pull requests:**
+
+- fix: update dependencies [\#58](https://github.com/bancolombia/data-mask/pull/58) ([juancgalvis](https://github.com/juancgalvis))
+
 ## [v2.0.2](https://github.com/bancolombia/data-mask/tree/v2.0.2) (2026-03-19)
 
 [Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.1...v2.0.2)
