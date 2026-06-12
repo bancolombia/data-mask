@@ -24,7 +24,7 @@ jobs:
       - name: Generate a token
         id: generate_token
         if: github.ref == 'refs/heads/master'
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.APP_ID_ADMIN_GITHUB }}
           private-key: ${{ secrets.APP_PRIVATE_KEY_ADMIN_GITHUB }}
