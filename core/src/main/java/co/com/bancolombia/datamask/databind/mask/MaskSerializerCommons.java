@@ -33,7 +33,7 @@ public class MaskSerializerCommons {
         return value;
     }
 
-    private Object writeWithCipher(String plainValue, String maskedValue) throws IOException {
+    private Object writeWithCipher(String plainValue, String maskedValue) {
         var cipherValue = dataCipher.cipher(plainValue);
         if(maskingFormat.getTransformationType().equals(TransformationType.ONLY_CIPHER)){
             return cipherValue;

@@ -1,24 +1,25 @@
 package co.com.bancolombia.datamask;
 
+import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.JsonNodeType;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Optional;
 
-public class MaskUtils {
-
-    private MaskUtils() {
-    }
+@NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
+public final class MaskUtils {
 
     public static String mask(String fieldValue) {
         return MaskUtils.mask(fieldValue, 0, 0);
     }
+
     public static String mask(String fieldValue, int showFirstDigitCount, int showLastDigitCount) {
         return MaskUtils.mask(fieldValue, showFirstDigitCount, showLastDigitCount, false, null);
     }
 
-    public static String mask(String fieldValue, int showFirstDigitCount, int showLastDigitCount, boolean isMultiMask, String separator) {
+    public static String mask(String fieldValue, int showFirstDigitCount, int showLastDigitCount, boolean isMultiMask,
+                              String separator) {
         if (StringUtils.isBlank(fieldValue))
             return fieldValue;
 
@@ -35,7 +36,7 @@ public class MaskUtils {
             StringBuilder result = new StringBuilder();
 
             for (String part : parts) {
-                result.append(mask(part, showFirstDigitCount, showLastDigitCount,false, null));
+                result.append(mask(part, showFirstDigitCount, showLastDigitCount, false, null));
                 result.append(separator);
             }
 
@@ -65,10 +66,7 @@ public class MaskUtils {
     }
 
     private static int cleanIntParam(int input) {
-        if (input < 0)
-            return 0;
-        else
-            return input;
+        return Math.max(input, 0);
     }
 
     public static String[] split(String input) {

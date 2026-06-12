@@ -6,11 +6,13 @@ import co.com.bancolombia.datamask.cipher.DataCipher;
 import co.com.bancolombia.datamask.cipher.DataDecipher;
 import co.com.bancolombia.datamask.databind.unmask.StringDeserializer;
 import co.com.bancolombia.datamask.databind.util.TransformationType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Test;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
 
@@ -25,7 +27,7 @@ class JacksonAnnotationProcessorTests {
 
     @Test
     void testMaskReadOnly() {
-        ObjectMapper mapper = new MaskingObjectMapper();
+        JsonMapper mapper = new MaskingObjectMapper();
 
         Person p = new Person("Jhon Doe", "4444555566667777");
 
@@ -37,7 +39,7 @@ class JacksonAnnotationProcessorTests {
 
     @Test
     void testMaskingInlineFormat() {
-        ObjectMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
 
         Customer c = new Customer("Jhon Doe", "jhon.doe12@somedomain.com");
 
@@ -49,7 +51,7 @@ class JacksonAnnotationProcessorTests {
 
     @Test
     void testUnmaskingInlineFormat() {
-        ObjectMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
 
         String json = "{\"name\":\"Jhon Doe\",\"email\":\"masked_pair=jho******************" +
                 ".com|amhvbi5kb2UxMkBzb21lZG9tYWluLmNvbQ==\"}";
@@ -62,7 +64,7 @@ class JacksonAnnotationProcessorTests {
 
     @Test
     void testMaskingAsObject() {
-        ObjectMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
 
         Company c = new Company("Acme enterprises", "9999888877776666");
 
@@ -74,7 +76,7 @@ class JacksonAnnotationProcessorTests {
 
     @Test
     void testUnmaskingFromObject() {
-        ObjectMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
 
         String json = "{\"name\":\"Acme enterprises\",\"card\":{\"masked\":\"999*********6666\"," +
                 "\"enc\":\"OTk5OTg4ODg3Nzc3NjY2Ng==\"}}";
@@ -89,7 +91,7 @@ class JacksonAnnotationProcessorTests {
     void testUnmaskingAsObjecMapperModule() {
         SimpleModule module = new SimpleModule();
         module.addDeserializer(String.class, new StringDeserializer(new DummyDecipher()));
-        ObjectMapper mapper = JsonMapper.builder().addModule(module).build();
+        JsonMapper mapper = JsonMapper.builder().addModule(module).build();
 
         String json = "{\"name\":\"Jhon Doe\",\"email\":\"masked_pair=jho******************" +
                 ".com|amhvbi5kb2UxMkBzb21lZG9tYWluLmNvbQ==\"}";
@@ -103,11 +105,40 @@ class JacksonAnnotationProcessorTests {
 
     @Test
     void testNoMasking() {
-        ObjectMapper mapper = new MaskingObjectMapper();
+        JsonMapper mapper = new MaskingObjectMapper();
         Person p = new Person("Jhon Doe", "");
         String jsonValue = mapper.writeValueAsString(p);
         System.out.println(jsonValue);
         assertFalse(jsonValue.contains("*"));
+    }
+
+    @Test
+    void testJsonIncludeNonNullIsHonored() {
+        JsonMapper mapper = new MaskingObjectMapper();
+        Account account = new Account("Jhon Doe", null, "4444555566667777");
+        String jsonValue = mapper.writeValueAsString(account);
+        System.out.println(jsonValue);
+        assertFalse(jsonValue.contains("alias"));
+        assertTrue(jsonValue.contains("************7777"));
+    }
+
+    @Test
+    void testJsonPropertyIsHonored() {
+        JsonMapper mapper = new MaskingObjectMapper();
+        Account account = new Account("Jhon Doe", "JD", "4444555566667777");
+        String jsonValue = mapper.writeValueAsString(account);
+        System.out.println(jsonValue);
+        assertTrue(jsonValue.contains("\"full_name\":\"Jhon Doe\""));
+    }
+
+    @Test
+    void testJsonIgnoreIsHonored() {
+        JsonMapper mapper = new MaskingObjectMapper();
+        Account account = new Account("Jhon Doe", "JD", "4444555566667777");
+        String jsonValue = mapper.writeValueAsString(account);
+        System.out.println(jsonValue);
+        assertFalse(jsonValue.contains("alias"));
+        assertFalse(jsonValue.contains("JD"));
     }
 
     @Data
@@ -138,6 +169,21 @@ class JacksonAnnotationProcessorTests {
 
         @Mask(leftVisible = 3, rightVisible = 4, queryOnly = TransformationType.ALL, format =
                 DataMaskingConstants.ENCRYPTION_AS_OBJECT)
+        private String card;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Account {
+        @JsonProperty("full_name")
+        private String name;
+
+        @JsonIgnore
+        private String alias;
+
+        @Mask(rightVisible = 4)
         private String card;
     }
 

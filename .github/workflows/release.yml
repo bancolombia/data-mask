@@ -8,7 +8,7 @@ jobs:
     steps:
       - name: Generate a token
         id: generate_token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.APP_ID_ADMIN_GITHUB }}
           private-key: ${{ secrets.APP_PRIVATE_KEY_ADMIN_GITHUB }}
@@ -29,7 +29,7 @@ jobs:
           issuesWoLabels: true
           stripGeneratorNotice: true
       - name: Save version
-        uses: github-actions-x/commit@v2.9
+        uses: github-actions-x/commit@v2
         with:
           github-token: ${{ steps.generate_token.outputs.token }}
           push-branch: "master"
