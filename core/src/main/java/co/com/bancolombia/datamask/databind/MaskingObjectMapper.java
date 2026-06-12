@@ -6,6 +6,7 @@ import co.com.bancolombia.datamask.cipher.NoOpCipher;
 import co.com.bancolombia.datamask.cipher.NoOpDecipher;
 import co.com.bancolombia.datamask.databind.mask.MaskAnnotationIntrospector;
 import co.com.bancolombia.datamask.databind.unmask.UnmaskAnnotationIntrospector;
+import tools.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.Serial;
@@ -27,8 +28,11 @@ public class MaskingObjectMapper extends JsonMapper {
 
     public static JsonMapper.Builder builder(DataCipher cipher, DataDecipher decipher) {
         var introspector = pair(
-                new MaskAnnotationIntrospector(cipher),
-                new UnmaskAnnotationIntrospector(decipher)
+                pair(
+                        new MaskAnnotationIntrospector(cipher),
+                        new UnmaskAnnotationIntrospector(decipher)
+                ),
+                new JacksonAnnotationIntrospector()
         );
         return JsonMapper.builder().annotationIntrospector(introspector);
     }
