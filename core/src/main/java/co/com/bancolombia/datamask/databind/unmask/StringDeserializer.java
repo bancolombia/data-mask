@@ -13,7 +13,6 @@ import tools.jackson.databind.node.JsonNodeType;
 import java.util.Optional;
 
 public class StringDeserializer extends StdDeserializer<String> {
-    private static final long serialVersionUID = 5586926178824899685L;
 
     private final DataDecipher dataDecipher;
 

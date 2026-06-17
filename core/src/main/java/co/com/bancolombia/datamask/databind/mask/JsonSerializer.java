@@ -28,8 +28,8 @@ public class JsonSerializer extends StdSerializer<DataMask<?>> {
     @Override
     public void serialize(DataMask value, JsonGenerator generator, SerializationContext provider) throws JacksonException {
         JsonMapper mapper = new JsonMapper();
-        JsonNode objectNode = JsonNodePathUtils.convertValue(value.getData(), mapper);
-        Map<IdentifyField, MaskingFormat> values = value.getFields();
+        JsonNode objectNode = JsonNodePathUtils.convertValue(value.data(), mapper);
+        Map<IdentifyField, MaskingFormat> values = value.fields();
         findFields(objectNode, values);
         generator.writeTree(objectNode);
     }

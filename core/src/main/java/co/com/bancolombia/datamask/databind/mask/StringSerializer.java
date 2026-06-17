@@ -8,12 +8,10 @@ import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.ser.std.StdSerializer;
 
-import java.io.IOException;
-
 public class StringSerializer extends StdSerializer<String> {
     private static final JsonMapper MAPPER = new JsonMapper();
-    private MaskingFormat maskingFormat;
-    private DataCipher dataCipher;
+    private final MaskingFormat maskingFormat;
+    private final DataCipher dataCipher;
 
     public StringSerializer(int leftVisible,
                             int rightVisible,
@@ -31,16 +29,11 @@ public class StringSerializer extends StdSerializer<String> {
 
     @Override
     public void serialize(String value, JsonGenerator generator, SerializationContext provider) throws JacksonException {
-        try {
-            Object resultMask = MaskSerializerCommons.of(maskingFormat, dataCipher).applyMask(value);
-            if (resultMask instanceof String resultMaskStr) {
-                generator.writeString(resultMaskStr);
-            } else {
-                MAPPER.writeValue(generator, resultMask);
-            }
-        } catch (IOException e) {
-            throw new JacksonException("Error during serialization", e) {
-            };
+        Object resultMask = MaskSerializerCommons.of(maskingFormat, dataCipher).applyMask(value);
+        if (resultMask instanceof String resultMaskStr) {
+            generator.writeString(resultMaskStr);
+        } else {
+            MAPPER.writeValue(generator, resultMask);
         }
     }
 }

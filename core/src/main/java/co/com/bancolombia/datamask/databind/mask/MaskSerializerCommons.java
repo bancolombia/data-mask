@@ -8,8 +8,6 @@ import co.com.bancolombia.datamask.databind.util.TransformationType;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.IOException;
-
 import static java.lang.Boolean.TRUE;
 
 @RequiredArgsConstructor(staticName = "of")
@@ -18,7 +16,7 @@ public class MaskSerializerCommons {
     private final MaskingFormat maskingFormat;
     private final DataCipher dataCipher;
 
-    public Object applyMask(String value) throws IOException {
+    public Object applyMask(String value) {
         if (!isSuitableForMasking(value)) {
             return value;
         }
@@ -33,7 +31,7 @@ public class MaskSerializerCommons {
         return value;
     }
 
-    private Object writeWithCipher(String plainValue, String maskedValue) throws IOException {
+    private Object writeWithCipher(String plainValue, String maskedValue) {
         var cipherValue = dataCipher.cipher(plainValue);
         if(maskingFormat.getTransformationType().equals(TransformationType.ONLY_CIPHER)){
             return cipherValue;
