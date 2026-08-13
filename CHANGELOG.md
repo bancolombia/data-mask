@@ -1,5 +1,48 @@
 # Changelog
 
+## [v2.0.6](https://github.com/bancolombia/data-mask/tree/v2.0.6) (2026-08-13)
+
+[Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.5...v2.0.6)
+
+**Merged pull requests:**
+
+- fix: doc and example for spring boot 4 [\#76](https://github.com/bancolombia/data-mask/pull/76) ([gabheadz](https://github.com/gabheadz))
+- chore\(deps\): bump github/codeql-action/upload-sarif from 4.37.4 to 4.37.6 [\#75](https://github.com/bancolombia/data-mask/pull/75) ([dependabot[bot]](https://github.com/apps/dependabot))
+- chore\(deps\): bump github/codeql-action/upload-sarif from 4.37.3 to 4.37.4 [\#74](https://github.com/bancolombia/data-mask/pull/74) ([dependabot[bot]](https://github.com/apps/dependabot))
+- chore\(deps\): bump ossf/scorecard-action from 2.4.3 to 2.4.4 [\#73](https://github.com/bancolombia/data-mask/pull/73) ([dependabot[bot]](https://github.com/apps/dependabot))
+- chore\(deps\): bump github/codeql-action/upload-sarif from 4.37.1 to 4.37.3 [\#72](https://github.com/bancolombia/data-mask/pull/72) ([dependabot[bot]](https://github.com/apps/dependabot))
+- chore\(deps\): bump github/codeql-action/upload-sarif from 4.37.0 to 4.37.1 [\#71](https://github.com/bancolombia/data-mask/pull/71) ([dependabot[bot]](https://github.com/apps/dependabot))
+- chore\(deps\): bump actions/setup-node from 6 to 7 [\#70](https://github.com/bancolombia/data-mask/pull/70) ([dependabot[bot]](https://github.com/apps/dependabot))
+- chore\(deps\): bump github/codeql-action/upload-sarif from 4.36.3 to 4.37.0 [\#69](https://github.com/bancolombia/data-mask/pull/69) ([dependabot[bot]](https://github.com/apps/dependabot))
+- ci: update app-id to client-id in GitHub token actions [\#68](https://github.com/bancolombia/data-mask/pull/68) ([luisgomez29](https://github.com/luisgomez29))
+- chore\(deps\): bump github/codeql-action/upload-sarif from 4.36.2 to 4.36.3 [\#67](https://github.com/bancolombia/data-mask/pull/67) ([dependabot[bot]](https://github.com/apps/dependabot))
+- chore\(deps\): bump actions/checkout from 6 to 7 [\#66](https://github.com/bancolombia/data-mask/pull/66) ([dependabot[bot]](https://github.com/apps/dependabot))
+- ci: comment out repo\_token in scorecards-analysis.yml [\#65](https://github.com/bancolombia/data-mask/pull/65) ([luisgomez29](https://github.com/luisgomez29))
+- ci: update commit action to version 2.9 in release workflow [\#64](https://github.com/bancolombia/data-mask/pull/64) ([luisgomez29](https://github.com/luisgomez29))
+- chore\(deps\): bump heinrichreimer/github-changelog-generator-action from 2.3 to 2.4 [\#62](https://github.com/bancolombia/data-mask/pull/62) ([dependabot[bot]](https://github.com/apps/dependabot))
+- chore\(deps\): bump amannn/action-semantic-pull-request from 5 to 6 [\#61](https://github.com/bancolombia/data-mask/pull/61) ([dependabot[bot]](https://github.com/apps/dependabot))
+- chore\(deps\): update dependencies [\#59](https://github.com/bancolombia/data-mask/pull/59) ([app-toolkit-opensource-innersource[bot]](https://github.com/apps/app-toolkit-opensource-innersource))
+
+## [v2.0.5](https://github.com/bancolombia/data-mask/tree/v2.0.5) (2026-06-17)
+
+[Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.4...v2.0.5)
+
+**Closed issues:**
+
+- MaskingObjectMapper overrides default Jackson annotations introspector [\#57](https://github.com/bancolombia/data-mask/issues/57)
+
+**Merged pull requests:**
+
+- ci: update repo\_token to use GITHUB\_TOKEN for scorecard action [\#63](https://github.com/bancolombia/data-mask/pull/63) ([luisgomez29](https://github.com/luisgomez29))
+
+## [v2.0.4](https://github.com/bancolombia/data-mask/tree/v2.0.4) (2026-06-17)
+
+[Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.3...v2.0.4)
+
+**Merged pull requests:**
+
+- fix: preserve default Jackson annotations when applying masking introspectors [\#60](https://github.com/bancolombia/data-mask/pull/60) ([luisgomez29](https://github.com/luisgomez29))
+
 ## [v2.0.3](https://github.com/bancolombia/data-mask/tree/v2.0.3) (2026-06-11)
 
 [Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.2...v2.0.3)
