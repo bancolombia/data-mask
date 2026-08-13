@@ -128,20 +128,8 @@ Using a customized Object Mapper you can:
 
 ## Installing
 
-With Gradle
-
 ```gradle
 implementation 'com.github.bancolombia:data-mask-core:<version>'
-```
-
-With maven
-
-```maven
-<dependency>
-  <groupId>com.github.bancolombia</groupId>
-  <artifactId>data-mask-core</artifactId>
-  <version>2.0.1</version>
-</dependency>
 ```
 
 This library depends on:
@@ -330,20 +318,8 @@ the encryption and decryption functionality.
 
 ## Using
 
-With Gradle
-
 ```gradle
-implementation 'com.github.bancolombia:data-mask-aws:1.2.0'
-```
-
-With maven
-
-```maven
-<dependency>
-  <groupId>com.github.bancolombia</groupId>
-  <artifactId>data-mask-aws</artifactId>
-  <version>1.2.0</version>
-</dependency>
+implementation 'com.github.bancolombia:data-mask-aws:<version>'
 ```
 
 ### Additional configuration
@@ -368,7 +344,6 @@ Just declare the customized Object Mapper as a Bean, and add **@Primary** annota
 ObjectMapper.
 
 ```java
-
 @Bean
 @Primary
 public ObjectMapper objectMapper(DataCipher awsCipher, DataDecipher awsDecipher) {
@@ -394,14 +369,14 @@ String maskedJson = mapper.writeValueAsString(model);
 
 Use versions 2.x.x of this library.
 
-Just declare the customized JsonMapper as a Bean, and add **@Primary** annotation to use instead of the default
-JsonMapper.
+MaskingObjectMapper extends `tools.jackson.databind.json.JsonMapper` (Jackson 3). 
+Since Spring Boot's `CodecsAutoConfiguration` also declares a `@Primary` bean named `jacksonJsonMapper`
+of type `JsonMapper`. We must declare this bean with such a name to avoid a conflict.
 
 ```java
-
-@Bean
+@Bean("jacksonJsonMapper")
 @Primary
-public JsonMapper jsonMapper(DataCipher awsCipher, DataDecipher awsDecipher) {
+public JsonMapper jacksonJsonMapper(DataCipher awsCipher, DataDecipher awsDecipher) {
     return new MaskingObjectMapper(awsCipher, awsDecipher);
 }
 ```
