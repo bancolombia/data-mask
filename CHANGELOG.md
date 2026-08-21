@@ -1,5 +1,14 @@
 # Changelog
 
+## [v2.0.7](https://github.com/bancolombia/data-mask/tree/v2.0.7) (2026-08-21)
+
+[Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.6...v2.0.7)
+
+**Merged pull requests:**
+
+- chore\(deps\): bump github/codeql-action/upload-sarif from 4.37.6 to 4.37.7 [\#78](https://github.com/bancolombia/data-mask/pull/78) ([dependabot[bot]](https://github.com/apps/dependabot))
+- fix\(deps\): update dependencies [\#77](https://github.com/bancolombia/data-mask/pull/77) ([app-toolkit-opensource-innersource[bot]](https://github.com/apps/app-toolkit-opensource-innersource))
+
 ## [v2.0.6](https://github.com/bancolombia/data-mask/tree/v2.0.6) (2026-08-13)
 
 [Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.5...v2.0.6)
