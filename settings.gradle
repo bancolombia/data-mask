@@ -1,5 +1,11 @@
 rootProject.name = 'data-mask'
 
+buildCache {
+    local {
+        directory = new File(rootDir, 'build-cache')
+    }
+}
+
 include ":data-mask-core"
 project(':data-mask-core').projectDir = file('./core')
 
