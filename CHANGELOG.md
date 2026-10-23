@@ -1,5 +1,26 @@
 # Changelog
 
+## [Unreleased](https://github.com/bancolombia/data-mask/tree/HEAD)
+
+[Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.8...HEAD)
+
+**Closed issues:**
+
+- Security report \(details removed per SECURITY.md\) [\#86](https://github.com/bancolombia/data-mask/issues/86)
+
+## [v2.0.8](https://github.com/bancolombia/data-mask/tree/v2.0.8) (2026-10-23)
+
+[Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.7...v2.0.8)
+
+**Merged pull requests:**
+
+- fix\(deps\): update dependencies [\#91](https://github.com/bancolombia/data-mask/pull/91) ([luisgomez29](https://github.com/luisgomez29))
+- chore\(deps\): bump github/codeql-action/upload-sarif from 4.38.0 to 4.38.1 [\#84](https://github.com/bancolombia/data-mask/pull/84) ([dependabot[bot]](https://github.com/apps/dependabot))
+- chore\(deps\): bump github/codeql-action/upload-sarif from 4.37.9 to 4.38.0 [\#83](https://github.com/bancolombia/data-mask/pull/83) ([dependabot[bot]](https://github.com/apps/dependabot))
+- chore\(deps\): bump actions/setup-java from 5 to 6 [\#82](https://github.com/bancolombia/data-mask/pull/82) ([dependabot[bot]](https://github.com/apps/dependabot))
+- chore\(deps\): bump github/codeql-action/upload-sarif from 4.37.8 to 4.37.9 [\#81](https://github.com/bancolombia/data-mask/pull/81) ([dependabot[bot]](https://github.com/apps/dependabot))
+- chore\(deps\): bump github/codeql-action/upload-sarif from 4.37.7 to 4.37.8 [\#79](https://github.com/bancolombia/data-mask/pull/79) ([dependabot[bot]](https://github.com/apps/dependabot))
+
 ## [v2.0.7](https://github.com/bancolombia/data-mask/tree/v2.0.7) (2026-08-21)
 
 [Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.6...v2.0.7)
