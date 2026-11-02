@@ -196,6 +196,9 @@ public static class Customer {
 }
 ````
 
+`@Mask` can also be placed on a getter (masking on serialization) or on a setter (unmasking on deserialization),
+which is useful when the class has no field to annotate, such as Kotlin properties (`@get:Mask`) or entity views.
+
 __Anotation Properties__
 
 | Attribute    | Default value        | Description                                                                                                                                                                                                                                                                                                      |

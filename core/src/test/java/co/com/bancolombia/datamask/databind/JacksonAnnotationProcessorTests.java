@@ -104,6 +104,28 @@ class JacksonAnnotationProcessorTests {
     }
 
     @Test
+    void testMaskOnGetter() {
+        JsonMapper mapper = new MaskingObjectMapper();
+
+        GetterAnnotated g = new GetterAnnotated("Jhon Doe", "4444555566667777");
+
+        String jsonValue = mapper.writeValueAsString(g);
+        assertTrue(jsonValue.contains("************7777"));
+        assertFalse(jsonValue.contains("4444555566667777"));
+    }
+
+    @Test
+    void testUnmaskOnSetter() {
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+
+        String json = "{\"name\":\"Jhon Doe\",\"email\":\"masked_pair=jho******************" +
+                ".com|amhvbi5kb2UxMkBzb21lZG9tYWluLmNvbQ==\"}";
+
+        SetterAnnotated s = mapper.readValue(json, SetterAnnotated.class);
+        assertEquals("jhon.doe12@somedomain.com", s.getEmail());
+    }
+
+    @Test
     void testNoMasking() {
         JsonMapper mapper = new MaskingObjectMapper();
         Person p = new Person("Jhon Doe", "");
@@ -197,6 +219,44 @@ class JacksonAnnotationProcessorTests {
         private String[] card;
     }
 
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class GetterAnnotated {
+        private String name;
+        private String cardNumber;
+
+        public String getName() {
+            return name;
+        }
+
+        @Mask(rightVisible = 4)
+        public String getCardNumber() {
+            return cardNumber;
+        }
+    }
+
+    public static class SetterAnnotated {
+        private String name;
+        private String email;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        @Mask(queryOnly = TransformationType.ALL, isEmail = true, leftVisible = 2, rightVisible = 1)
+        public void setEmail(String email) {
+            this.email = email;
+        }
+    }
 
     public static class DummyCipher implements DataCipher {
         @Override
