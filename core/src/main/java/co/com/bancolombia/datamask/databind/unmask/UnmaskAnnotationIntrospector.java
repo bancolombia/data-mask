@@ -24,7 +24,7 @@ public class UnmaskAnnotationIntrospector extends NopAnnotationIntrospector {
         Mask annotation = annotated.getAnnotation(Mask.class);
         if (annotation != null && !annotation.queryOnly().equals(TransformationType.ONLY_MASK)) {
             MaskTargets.requireString(annotated);
-            return new StringDeserializer(dataDecipher);
+            return new StringDeserializer(dataDecipher, annotation.queryOnly());
         }
         return null;
     }

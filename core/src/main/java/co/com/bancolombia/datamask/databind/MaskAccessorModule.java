@@ -20,30 +20,38 @@ import java.util.Set;
 /**
  * Rejects {@link Mask} on a method that Jackson does not use as a getter or setter. Such an annotation would
  * otherwise be ignored without any error, and the value it was meant to protect would be written as is.
+ * <p>
+ * Serialization checks the methods that could write a value (no parameters) against the getters, and
+ * deserialization checks the methods that could read one (one parameter) against the setters, so setter-only and
+ * getter-only properties are accepted.
+ * <p>
+ * {@link MaskingObjectMapper} registers this module. Register it as well when building a mapper with
+ * {@code MaskAnnotationIntrospector} and {@code UnmaskAnnotationIntrospector} directly.
  */
-class MaskAccessorModule extends SimpleModule {
+public class MaskAccessorModule extends SimpleModule {
 
     @Serial
     private static final long serialVersionUID = -4417095846214322011L;
 
-    MaskAccessorModule() {
+    public MaskAccessorModule() {
         super("data-mask-accessor-check");
         setSerializerModifier(new SerializerCheck());
         setDeserializerModifier(new DeserializerCheck());
     }
 
-    static void checkAccessors(BeanDescription beanDesc) {
+    static void checkAccessors(BeanDescription beanDesc, boolean forSerialization) {
         Set<Method> accessors = new HashSet<>();
         for (BeanPropertyDefinition property : beanDesc.findProperties()) {
-            if (property.hasGetter()) {
-                accessors.add(property.getGetter().getAnnotated());
-            }
-            if (property.hasSetter()) {
-                accessors.add(property.getSetter().getAnnotated());
+            AnnotatedMethod accessor = forSerialization ? property.getGetter() : property.getSetter();
+            if (accessor != null) {
+                accessors.add(accessor.getAnnotated());
             }
         }
+        int parameterCount = forSerialization ? 0 : 1;
         for (AnnotatedMethod method : beanDesc.getClassInfo().memberMethods()) {
-            if (method.hasAnnotation(Mask.class) && !accessors.contains(method.getAnnotated())) {
+            if (method.getParameterCount() == parameterCount
+                    && method.hasAnnotation(Mask.class)
+                    && !accessors.contains(method.getAnnotated())) {
                 throw new IllegalArgumentException("@Mask on " + method.getFullName()
                         + " has no effect: Jackson does not use this method as a getter or setter");
             }
@@ -59,7 +67,7 @@ class MaskAccessorModule extends SimpleModule {
         public List<BeanPropertyWriter> changeProperties(SerializationConfig config,
                                                          BeanDescription.Supplier beanDesc,
                                                          List<BeanPropertyWriter> beanProperties) {
-            checkAccessors(beanDesc.get());
+            checkAccessors(beanDesc.get(), true);
             return beanProperties;
         }
     }
@@ -73,7 +81,7 @@ class MaskAccessorModule extends SimpleModule {
         public List<BeanPropertyDefinition> updateProperties(DeserializationConfig config,
                                                              BeanDescription.Supplier beanDesc,
                                                              List<BeanPropertyDefinition> propDefs) {
-            checkAccessors(beanDesc.get());
+            checkAccessors(beanDesc.get(), false);
             return propDefs;
         }
     }

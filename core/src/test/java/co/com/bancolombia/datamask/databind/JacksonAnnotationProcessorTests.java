@@ -4,6 +4,7 @@ import co.com.bancolombia.datamask.DataMaskingConstants;
 import co.com.bancolombia.datamask.Mask;
 import co.com.bancolombia.datamask.cipher.DataCipher;
 import co.com.bancolombia.datamask.cipher.DataDecipher;
+import co.com.bancolombia.datamask.databind.mask.MaskAnnotationIntrospector;
 import co.com.bancolombia.datamask.databind.unmask.StringDeserializer;
 import co.com.bancolombia.datamask.databind.util.TransformationType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -13,7 +14,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.AnnotationIntrospector;
 import tools.jackson.databind.DatabindException;
+import tools.jackson.databind.exc.MismatchedInputException;
+import tools.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
 
@@ -182,6 +186,66 @@ class JacksonAnnotationProcessorTests {
         DatabindException e = assertThrows(DatabindException.class,
                 () -> mapper.writeValueAsString(new FluentAnnotated("4444555566667777")));
         assertTrue(e.getMessage().contains("has no effect"));
+    }
+
+    @Test
+    void testAccessorModuleOnCustomMapper() {
+        JsonMapper mapper = JsonMapper.builder()
+                .annotationIntrospector(AnnotationIntrospector.pair(
+                        new MaskAnnotationIntrospector(new DummyCipher()), new JacksonAnnotationIntrospector()))
+                .addModule(new MaskAccessorModule())
+                .build();
+
+        DatabindException e = assertThrows(DatabindException.class,
+                () -> mapper.writeValueAsString(new HelperAnnotated("4444555566667777")));
+        assertTrue(e.getMessage().contains("maskCard"));
+    }
+
+    @Test
+    void testSetterOnlyPropertyIsAccepted() {
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+
+        SetterOnlyAnnotated read = mapper.readValue(MASKED_EMAIL_JSON, SetterOnlyAnnotated.class);
+        assertEquals(EMAIL, read.email);
+        assertEquals("{\"name\":\"Jhon Doe\"}", mapper.writeValueAsString(read));
+    }
+
+    @Test
+    void testGetterOnlyPropertyIsAccepted() {
+        JsonMapper mapper = new MaskingObjectMapper();
+
+        String jsonValue = mapper.writeValueAsString(new GetterOnlyAnnotated("Jhon Doe", "4444555566667777"));
+        assertTrue(jsonValue.contains("\"card\":\"************7777\""));
+        assertEquals("Jhon Doe", mapper.readValue(jsonValue, GetterOnlyAnnotated.class).name);
+    }
+
+    @Test
+    void testWriteOnlyMaskedField() {
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+
+        assertEquals("{\"name\":\"Jhon Doe\"}", mapper.writeValueAsString(new WriteOnlyAnnotated("Jhon Doe", EMAIL)));
+
+        String json = "{\"name\":\"Jhon Doe\",\"password\":\"" + MASKED_EMAIL + "\"}";
+        assertEquals(EMAIL, mapper.readValue(json, WriteOnlyAnnotated.class).getPassword());
+    }
+
+    @Test
+    void testOnlyCipherRoundTrip() {
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+
+        String jsonValue = mapper.writeValueAsString(new CipherOnly("Jhon Doe", "4444555566667777"));
+        assertTrue(jsonValue.contains("\"card\":\"NDQ0NDU1NTU2NjY2Nzc3Nw==\""));
+        assertEquals("4444555566667777", mapper.readValue(jsonValue, CipherOnly.class).getCard());
+    }
+
+    @Test
+    void testMalformedMaskedValueIsAnInputMismatch() {
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+
+        String json = "{\"name\":\"Jhon Doe\",\"email\":\"" + DataMaskingConstants.MASKING_PREFIX + "clientvalue\"}";
+        MismatchedInputException e = assertThrows(MismatchedInputException.class,
+                () -> mapper.readValue(json, Customer.class));
+        assertTrue(e.getMessage().contains("<masked value>|<encrypted value>"));
     }
 
     @Test
@@ -362,6 +426,49 @@ class JacksonAnnotationProcessorTests {
         public String card() {
             return card;
         }
+    }
+
+    public static class SetterOnlyAnnotated {
+        public String name;
+        private String email;
+
+        @Mask(queryOnly = TransformationType.ALL)
+        public void setEmail(String email) {
+            this.email = email;
+        }
+    }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class GetterOnlyAnnotated {
+        public String name;
+        private String card;
+
+        @Mask(rightVisible = 4)
+        public String getCard() {
+            return card;
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class WriteOnlyAnnotated {
+        private String name;
+
+        @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+        @Mask(queryOnly = TransformationType.ALL)
+        private String password;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class CipherOnly {
+        private String name;
+
+        @Mask(queryOnly = TransformationType.ONLY_CIPHER)
+        private String card;
     }
 
     public static class DummyCipher implements DataCipher {

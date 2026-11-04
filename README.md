@@ -200,9 +200,11 @@ public static class Customer {
 Kotlin properties (`@get:Mask`) or entity views. Jackson merges the annotations of a property's field, getter, setter
 and constructor parameter, so `@Mask` on any of them configures the whole property in both directions, exactly as on
 the field: serialization masks the value, and deserialization deciphers it only when `queryOnly` is
-`TransformationType.ALL`. The annotated member must be a `String`, and the method must be a getter or setter that
-Jackson uses for the property (for example `getCard()` or `setCard(String)`). Otherwise `MaskingObjectMapper` fails
-the first time it handles the class, instead of ignoring the annotation.
+`TransformationType.ALL` or `TransformationType.ONLY_CIPHER`. The annotated member must be a `String`, and the method
+must be a getter or setter that Jackson uses for the property (for example `getCard()` or `setCard(String)`).
+Otherwise `MaskingObjectMapper` fails the first time it handles the class, instead of ignoring the annotation.
+This check comes from `MaskAccessorModule`: if you build your own mapper with `MaskAnnotationIntrospector` and
+`UnmaskAnnotationIntrospector` instead of `MaskingObjectMapper`, register `new MaskAccessorModule()` as well.
 
 __Anotation Properties__
 
@@ -212,7 +214,7 @@ __Anotation Properties__
 | rightVisible | 0                    | Masking: how many characters should remain visible on right Example: *****World                                                                                                                                                                                                                                  |
 | queryOnly    | ONLY_MASK            | `TransformationType.ONLY_MASK`: serialization generates the masked value only, and deserialization leaves the value as is.                                                                                                                                                                                       |
 |              |                      | `TransformationType.ALL`: serialization generates the masked value and the encrypted value, and deserialization deciphers it.                                                                                                                                                                                    |
-|              |                      | `TransformationType.ONLY_CIPHER`: serialization generates the encrypted value only.                                                                                                                                                                                                                              |
+|              |                      | `TransformationType.ONLY_CIPHER`: serialization generates the encrypted value only, and deserialization deciphers it.                                                                                                                                                                                            |
 | format       | ENCRYPTION_INLINE    | Describes how masked and encrypted data should be serialized. Using `ENCRYPTION_INLINE` means masked and encrypted values together are serialized as string: ```masked_pair=<masked_value>I<encrypted_value>```                                                                                                  |
 |              |                      | Using `ENCRYPTION_AS_OBJECT`, means masked and encrypted values are serialized as a json object.                                                                                                                                                                                                                 |
 | isMultiMask  | false                | `true`: Enhanced the data masking capability to be dynamic using the separator property to identify each word separately and allowing masking each one.  Example: H**** w****<br/> `false`: The dynamic data masking is not allowed and the behavior will be as before  Example: Hello******. <br/> **optional** | 
