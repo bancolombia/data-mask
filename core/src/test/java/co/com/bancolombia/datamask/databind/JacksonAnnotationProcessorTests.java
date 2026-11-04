@@ -13,6 +13,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.DatabindException;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
 
@@ -21,9 +22,15 @@ import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JacksonAnnotationProcessorTests {
+
+    private static final String EMAIL = "jhon.doe12@somedomain.com";
+    private static final String MASKED_EMAIL = DataMaskingConstants.MASKING_PREFIX
+            + "jho******************.com|amhvbi5kb2UxMkBzb21lZG9tYWluLmNvbQ==";
+    private static final String MASKED_EMAIL_JSON = "{\"name\":\"Jhon Doe\",\"email\":\"" + MASKED_EMAIL + "\"}";
 
     @Test
     void testMaskReadOnly() {
@@ -53,13 +60,10 @@ class JacksonAnnotationProcessorTests {
     void testUnmaskingInlineFormat() {
         JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
 
-        String json = "{\"name\":\"Jhon Doe\",\"email\":\"masked_pair=jho******************" +
-                ".com|amhvbi5kb2UxMkBzb21lZG9tYWluLmNvbQ==\"}";
-
-        Customer customer = mapper.readValue(json, Customer.class);
+        Customer customer = mapper.readValue(MASKED_EMAIL_JSON, Customer.class);
         System.out.println(customer.toString());
         assertEquals("Jhon Doe", customer.getName());
-        assertEquals("jhon.doe12@somedomain.com", customer.getEmail());
+        assertEquals(EMAIL, customer.getEmail());
     }
 
     @Test
@@ -93,36 +97,91 @@ class JacksonAnnotationProcessorTests {
         module.addDeserializer(String.class, new StringDeserializer(new DummyDecipher()));
         JsonMapper mapper = JsonMapper.builder().addModule(module).build();
 
-        String json = "{\"name\":\"Jhon Doe\",\"email\":\"masked_pair=jho******************" +
-                ".com|amhvbi5kb2UxMkBzb21lZG9tYWluLmNvbQ==\"}";
-
-        Customer customer = mapper.readValue(json, Customer.class);
+        Customer customer = mapper.readValue(MASKED_EMAIL_JSON, Customer.class);
         System.out.println(customer.toString());
         assertEquals("Jhon Doe", customer.getName());
-        assertEquals("jhon.doe12@somedomain.com", customer.getEmail());
+        assertEquals(EMAIL, customer.getEmail());
 
     }
 
     @Test
-    void testMaskOnGetter() {
-        JsonMapper mapper = new MaskingObjectMapper();
-
-        GetterAnnotated g = new GetterAnnotated("Jhon Doe", "4444555566667777");
-
-        String jsonValue = mapper.writeValueAsString(g);
-        assertTrue(jsonValue.contains("************7777"));
-        assertFalse(jsonValue.contains("4444555566667777"));
-    }
-
-    @Test
-    void testUnmaskOnSetter() {
+    void testMaskOnGetterAppliesToBothDirections() {
         JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
 
-        String json = "{\"name\":\"Jhon Doe\",\"email\":\"masked_pair=jho******************" +
-                ".com|amhvbi5kb2UxMkBzb21lZG9tYWluLmNvbQ==\"}";
+        String jsonValue = mapper.writeValueAsString(new GetterAnnotated("Jhon Doe", "4444555566667777"));
+        assertTrue(jsonValue.contains(DataMaskingConstants.MASKING_PREFIX + "************7777|"));
+        assertFalse(jsonValue.contains("4444555566667777"));
 
-        SetterAnnotated s = mapper.readValue(json, SetterAnnotated.class);
-        assertEquals("jhon.doe12@somedomain.com", s.getEmail());
+        GetterAnnotated read = mapper.readValue(jsonValue, GetterAnnotated.class);
+        assertEquals("4444555566667777", read.getCard());
+    }
+
+    @Test
+    void testMaskOnSetterAppliesToBothDirections() {
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+
+        SetterAnnotated read = mapper.readValue(MASKED_EMAIL_JSON, SetterAnnotated.class);
+        assertEquals(EMAIL, read.getEmail());
+
+        String jsonValue = mapper.writeValueAsString(read);
+        assertTrue(jsonValue.contains(DataMaskingConstants.MASKING_PREFIX));
+        assertFalse(jsonValue.contains(EMAIL));
+    }
+
+    @Test
+    void testBareMaskOnSetterMasksWithoutDeciphering() {
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+
+        BareSetterAnnotated read = mapper.readValue(MASKED_EMAIL_JSON, BareSetterAnnotated.class);
+        assertEquals(MASKED_EMAIL, read.getEmail());
+
+        String jsonValue = mapper.writeValueAsString(new BareSetterAnnotated("Jhon Doe", EMAIL));
+        assertTrue(jsonValue.contains("\"email\":\"" + "*".repeat(EMAIL.length()) + "\""));
+    }
+
+    @Test
+    void testMaskOnRecordComponent() {
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+
+        String jsonValue = mapper.writeValueAsString(new CardRecord("Jhon Doe", "4444555566667777"));
+        assertTrue(jsonValue.contains(DataMaskingConstants.MASKING_PREFIX + "************7777|"));
+        assertEquals("4444555566667777", mapper.readValue(jsonValue, CardRecord.class).card());
+    }
+
+    @Test
+    void testMaskOnNonStringGetterIsRejected() {
+        JsonMapper mapper = new MaskingObjectMapper();
+
+        DatabindException e = assertThrows(DatabindException.class,
+                () -> mapper.writeValueAsString(new NonStringGetter(1234)));
+        assertTrue(e.getMessage().contains("@Mask supports String members only"));
+    }
+
+    @Test
+    void testMaskOnNonStringSetterIsRejected() {
+        JsonMapper mapper = new MaskingObjectMapper();
+
+        DatabindException e = assertThrows(DatabindException.class,
+                () -> mapper.readValue("{\"age\":30}", NonStringSetter.class));
+        assertTrue(e.getMessage().contains("@Mask supports String members only"));
+    }
+
+    @Test
+    void testMaskOnHelperMethodIsRejected() {
+        JsonMapper mapper = new MaskingObjectMapper();
+
+        DatabindException e = assertThrows(DatabindException.class,
+                () -> mapper.writeValueAsString(new HelperAnnotated("4444555566667777")));
+        assertTrue(e.getMessage().contains("maskCard"));
+    }
+
+    @Test
+    void testMaskOnFluentAccessorIsRejected() {
+        JsonMapper mapper = new MaskingObjectMapper();
+
+        DatabindException e = assertThrows(DatabindException.class,
+                () -> mapper.writeValueAsString(new FluentAnnotated("4444555566667777")));
+        assertTrue(e.getMessage().contains("has no effect"));
     }
 
     @Test
@@ -220,41 +279,88 @@ class JacksonAnnotationProcessorTests {
     }
 
 
-    @NoArgsConstructor
+    @Data
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class GetterAnnotated {
         private String name;
-        private String cardNumber;
+        private String card;
 
-        public String getName() {
-            return name;
-        }
-
-        @Mask(rightVisible = 4)
-        public String getCardNumber() {
-            return cardNumber;
+        @Mask(rightVisible = 4, queryOnly = TransformationType.ALL)
+        public String getCard() {
+            return card;
         }
     }
 
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class SetterAnnotated {
         private String name;
         private String email;
 
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getEmail() {
-            return email;
-        }
-
-        @Mask(queryOnly = TransformationType.ALL, isEmail = true, leftVisible = 2, rightVisible = 1)
+        @Mask(queryOnly = TransformationType.ALL)
         public void setEmail(String email) {
             this.email = email;
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class BareSetterAnnotated {
+        private String name;
+        private String email;
+
+        @Mask
+        public void setEmail(String email) {
+            this.email = email;
+        }
+    }
+
+    public record CardRecord(String name, @Mask(rightVisible = 4, queryOnly = TransformationType.ALL) String card) {
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class NonStringGetter {
+        private int pin;
+
+        @Mask(rightVisible = 4)
+        public int getPin() {
+            return pin;
+        }
+    }
+
+    @Data
+    @NoArgsConstructor
+    public static class NonStringSetter {
+        private int age;
+
+        @Mask(queryOnly = TransformationType.ALL)
+        public void setAge(int age) {
+            this.age = age;
+        }
+    }
+
+    @AllArgsConstructor
+    public static class HelperAnnotated {
+        public String card;
+
+        @Mask(rightVisible = 4)
+        public String maskCard() {
+            return card;
+        }
+    }
+
+    @AllArgsConstructor
+    public static class FluentAnnotated {
+        private String card;
+
+        @Mask(rightVisible = 4)
+        public String card() {
+            return card;
         }
     }
 

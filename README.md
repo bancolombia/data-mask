@@ -191,23 +191,29 @@ public static class Customer {
     @Mask(leftVisible = 3, rightVisible = 4)
     private String email;
 
-    @Mask(rightVisible = 4, queryOnly = false, format = DataMaskingConstants.ENCRYPTION_AS_OBJECT)
+    @Mask(rightVisible = 4, queryOnly = TransformationType.ALL, format = DataMaskingConstants.ENCRYPTION_AS_OBJECT)
     private String creditCardNumber;
 }
 ````
 
-`@Mask` can also be placed on a getter (masking on serialization) or on a setter (unmasking on deserialization),
-which is useful when the class has no field to annotate, such as Kotlin properties (`@get:Mask`) or entity views.
+`@Mask` can also be placed on a getter or a setter, which is useful when the class has no field to annotate, such as
+Kotlin properties (`@get:Mask`) or entity views. Jackson merges the annotations of a property's field, getter, setter
+and constructor parameter, so `@Mask` on any of them configures the whole property in both directions, exactly as on
+the field: serialization masks the value, and deserialization deciphers it only when `queryOnly` is
+`TransformationType.ALL`. The annotated member must be a `String`, and the method must be a getter or setter that
+Jackson uses for the property (for example `getCard()` or `setCard(String)`). Otherwise `MaskingObjectMapper` fails
+the first time it handles the class, instead of ignoring the annotation.
 
 __Anotation Properties__
 
 | Attribute    | Default value        | Description                                                                                                                                                                                                                                                                                                      |
 |--------------|----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | leftVisible  | 0                    | Masking: how many characters should remain visible on left. Example: Hello******                                                                                                                                                                                                                                 |
-| rightVisible | 4                    | Masking: how many characters should remain visible on right Example: *****World                                                                                                                                                                                                                                  |
-| queryOnly    | true                 | `true`: Serialization should generate masked value only.                                                                                                                                                                                                                                                         |
-|              |                      | `false`: serialization should generate masked value and encrypted value.                                                                                                                                                                                                                                         |
-| format       | ENCRYPTION_AS_OBJECT | Describes how masked and encrypted data should be serialized. Using `ENCRYPTION_INLINE` means masked and encrypted values together are serialized as string: ```masked_pair=<masked_value>I<encrypted_value>```                                                                                                  |
+| rightVisible | 0                    | Masking: how many characters should remain visible on right Example: *****World                                                                                                                                                                                                                                  |
+| queryOnly    | ONLY_MASK            | `TransformationType.ONLY_MASK`: serialization generates the masked value only, and deserialization leaves the value as is.                                                                                                                                                                                       |
+|              |                      | `TransformationType.ALL`: serialization generates the masked value and the encrypted value, and deserialization deciphers it.                                                                                                                                                                                    |
+|              |                      | `TransformationType.ONLY_CIPHER`: serialization generates the encrypted value only.                                                                                                                                                                                                                              |
+| format       | ENCRYPTION_INLINE    | Describes how masked and encrypted data should be serialized. Using `ENCRYPTION_INLINE` means masked and encrypted values together are serialized as string: ```masked_pair=<masked_value>I<encrypted_value>```                                                                                                  |
 |              |                      | Using `ENCRYPTION_AS_OBJECT`, means masked and encrypted values are serialized as a json object.                                                                                                                                                                                                                 |
 | isMultiMask  | false                | `true`: Enhanced the data masking capability to be dynamic using the separator property to identify each word separately and allowing masking each one.  Example: H**** w****<br/> `false`: The dynamic data masking is not allowed and the behavior will be as before  Example: Hello******. <br/> **optional** | 
 | separator    | " "                  | With this property you can define the divisor character to use the multimask capability <br/> **optional**                                                                                                                                                                                                       | 
@@ -227,7 +233,7 @@ public class Customer {
     @Mask(leftVisible = 3, rightVisible = 4)
     private String email;
 
-    @Mask(rightVisible = 4, queryOnly = false, format = DataMaskingConstants.ENCRYPTION_AS_OBJECT)
+    @Mask(rightVisible = 4, queryOnly = TransformationType.ALL, format = DataMaskingConstants.ENCRYPTION_AS_OBJECT)
     private String creditCardNumber;
 }
 ````
