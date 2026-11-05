@@ -1,12 +1,19 @@
 # Changelog
 
-## [Unreleased](https://github.com/bancolombia/data-mask/tree/HEAD)
+## [v2.1.0](https://github.com/bancolombia/data-mask/tree/v2.1.0) (2026-11-05)
 
-[Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.8...HEAD)
+[Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.8...v2.1.0)
 
 **Closed issues:**
 
 - Security report \(details removed per SECURITY.md\) [\#86](https://github.com/bancolombia/data-mask/issues/86)
+- Allow Mask annotation to target methods \(getter/setter\) [\#14](https://github.com/bancolombia/data-mask/issues/14)
+
+**Merged pull requests:**
+
+- feat: allow @Mask on getters and setters [\#94](https://github.com/bancolombia/data-mask/pull/94) ([kendjm](https://github.com/kendjm))
+- ci: Update scorecard-action version to v2.5.0 [\#92](https://github.com/bancolombia/data-mask/pull/92) ([luisgomez29](https://github.com/luisgomez29))
+- fix\(deps\): update dependencies [\#80](https://github.com/bancolombia/data-mask/pull/80) ([app-toolkit-opensource-innersource[bot]](https://github.com/apps/app-toolkit-opensource-innersource))
 
 ## [v2.0.8](https://github.com/bancolombia/data-mask/tree/v2.0.8) (2026-10-23)
 
