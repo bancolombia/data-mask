@@ -2,6 +2,7 @@ package co.com.bancolombia.datamask.databind.unmask;
 
 import co.com.bancolombia.datamask.Mask;
 import co.com.bancolombia.datamask.cipher.DataDecipher;
+import co.com.bancolombia.datamask.databind.util.MaskTargets;
 import co.com.bancolombia.datamask.databind.util.TransformationType;
 import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.cfg.MapperConfig;
@@ -22,7 +23,8 @@ public class UnmaskAnnotationIntrospector extends NopAnnotationIntrospector {
     public Object findDeserializer(MapperConfig<?> config, Annotated annotated) {
         Mask annotation = annotated.getAnnotation(Mask.class);
         if (annotation != null && !annotation.queryOnly().equals(TransformationType.ONLY_MASK)) {
-            return new StringDeserializer(dataDecipher);
+            MaskTargets.requireString(annotated);
+            return new StringDeserializer(dataDecipher, annotation.queryOnly());
         }
         return null;
     }

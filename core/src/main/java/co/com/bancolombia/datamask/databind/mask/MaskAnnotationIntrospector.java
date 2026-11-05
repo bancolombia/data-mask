@@ -2,6 +2,7 @@ package co.com.bancolombia.datamask.databind.mask;
 
 import co.com.bancolombia.datamask.Mask;
 import co.com.bancolombia.datamask.cipher.DataCipher;
+import co.com.bancolombia.datamask.databind.util.MaskTargets;
 import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.cfg.MapperConfig;
 import tools.jackson.databind.introspect.Annotated;
@@ -21,6 +22,7 @@ public class MaskAnnotationIntrospector extends NopAnnotationIntrospector {
     public Object findSerializer(MapperConfig<?> config, Annotated annotated) {
         Mask annotation = annotated.getAnnotation(Mask.class);
         if (annotation != null) {
+            MaskTargets.requireString(annotated);
             return new StringSerializer(annotation.leftVisible(),
                     annotation.rightVisible(),
                     annotation.queryOnly(),

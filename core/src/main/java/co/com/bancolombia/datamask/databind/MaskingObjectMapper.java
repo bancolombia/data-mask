@@ -34,7 +34,9 @@ public class MaskingObjectMapper extends JsonMapper {
                 ),
                 new JacksonAnnotationIntrospector()
         );
-        return JsonMapper.builder().annotationIntrospector(introspector);
+        return JsonMapper.builder()
+                .annotationIntrospector(introspector)
+                .addModule(new MaskAccessorModule());
     }
 
 }

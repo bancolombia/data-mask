@@ -3,6 +3,7 @@ package co.com.bancolombia.datamask.databind.unmask;
 import co.com.bancolombia.datamask.DataMaskingConstants;
 import co.com.bancolombia.datamask.MaskUtils;
 import co.com.bancolombia.datamask.cipher.DataDecipher;
+import co.com.bancolombia.datamask.databind.util.TransformationType;
 import org.apache.commons.lang3.StringUtils;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.DeserializationContext;
@@ -15,10 +16,16 @@ import java.util.Optional;
 public class StringDeserializer extends StdDeserializer<String> {
 
     private final DataDecipher dataDecipher;
+    private final TransformationType transformationType;
 
     public StringDeserializer(DataDecipher dataDecipher) {
+        this(dataDecipher, TransformationType.ALL);
+    }
+
+    public StringDeserializer(DataDecipher dataDecipher, TransformationType transformationType) {
         super(String.class);
         this.dataDecipher = dataDecipher;
+        this.transformationType = transformationType;
     }
 
     @Override
@@ -26,12 +33,25 @@ public class StringDeserializer extends StdDeserializer<String> {
         JsonNode node = p.readValueAsTree();
         if (isEncryptedString(node)) {
             String[] maskedValuesInfo = MaskUtils.split(node.asString());
+            if (maskedValuesInfo.length < 2) {
+                return ctxt.reportInputMismatch(this, "Expected %s<masked value>|<encrypted value>",
+                        DataMaskingConstants.MASKING_PREFIX);
+            }
             return dataDecipher.decipher(maskedValuesInfo[1]);
         } else if (MaskUtils.isEncryptedObject(node)) {
             return dataDecipher.decipher(node.findValue(DataMaskingConstants.ENCRYPTED_ATTR).asString());
+        } else if (isCipherOnly(node)) {
+            return dataDecipher.decipher(node.asString());
         } else {
             return node.asString();
         }
+    }
+
+    // ONLY_CIPHER writes the encrypted value alone, with no prefix and no masked value.
+    private boolean isCipherOnly(JsonNode node) {
+        return transformationType == TransformationType.ONLY_CIPHER
+                && node.getNodeType().equals(JsonNodeType.STRING)
+                && StringUtils.isNotBlank(node.asString());
     }
 
     private boolean isEncryptedString(JsonNode node) {
