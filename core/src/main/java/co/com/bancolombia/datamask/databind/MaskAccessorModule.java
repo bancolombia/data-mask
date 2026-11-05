@@ -23,7 +23,8 @@ import java.util.Set;
  * <p>
  * Serialization checks the methods that could write a value (no parameters) against the getters, and
  * deserialization checks the methods that could read one (one parameter) against the setters, so setter-only and
- * getter-only properties are accepted.
+ * getter-only properties are accepted. A method with the other parameter count is not checked in that direction,
+ * so a misplaced annotation on a class used in only one direction can go undetected.
  * <p>
  * {@link MaskingObjectMapper} registers this module. Register it as well when building a mapper with
  * {@code MaskAnnotationIntrospector} and {@code UnmaskAnnotationIntrospector} directly.

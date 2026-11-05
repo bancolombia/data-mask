@@ -202,7 +202,10 @@ and constructor parameter, so `@Mask` on any of them configures the whole proper
 the field: serialization masks the value, and deserialization deciphers it only when `queryOnly` is
 `TransformationType.ALL` or `TransformationType.ONLY_CIPHER`. The annotated member must be a `String`, and the method
 must be a getter or setter that Jackson uses for the property (for example `getCard()` or `setCard(String)`).
-Otherwise `MaskingObjectMapper` fails the first time it handles the class, instead of ignoring the annotation.
+`MaskingObjectMapper` checks this instead of ignoring a misplaced annotation: the first time it serializes a class, it
+fails on any `@Mask` method without parameters that is not a getter, and the first time it deserializes one, on any
+`@Mask` method with one parameter that is not a setter. A method with the other parameter count is not checked in that
+direction, so a misplaced annotation on a class used in only one direction can go undetected.
 This check comes from `MaskAccessorModule`: if you build your own mapper with `MaskAnnotationIntrospector` and
 `UnmaskAnnotationIntrospector` instead of `MaskingObjectMapper`, register `new MaskAccessorModule()` as well.
 

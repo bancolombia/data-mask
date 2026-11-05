@@ -17,14 +17,17 @@ public class MaskSerializerCommons {
     private final DataCipher dataCipher;
 
     public Object applyMask(String value) {
+        // ONLY_CIPHER writes no masked value, so the visible-character rules do not apply: every value is encrypted.
+        if (maskingFormat.getTransformationType().equals(TransformationType.ONLY_CIPHER)) {
+            return StringUtils.isBlank(value) ? value : dataCipher.cipher(value);
+        }
         if (!isSuitableForMasking(value)) {
             return value;
         }
         if (maskingFormat.getTransformationType().equals(TransformationType.ONLY_MASK)) {
             return generateMaskedValue(value);
         }
-        if(maskingFormat.getTransformationType().equals(TransformationType.ALL) ||
-        maskingFormat.getTransformationType().equals(TransformationType.ONLY_CIPHER)) {
+        if (maskingFormat.getTransformationType().equals(TransformationType.ALL)) {
             var maskedValue = generateMaskedValue(value);
             return writeWithCipher(value, maskedValue);
         }
@@ -33,9 +36,6 @@ public class MaskSerializerCommons {
 
     private Object writeWithCipher(String plainValue, String maskedValue) {
         var cipherValue = dataCipher.cipher(plainValue);
-        if(maskingFormat.getTransformationType().equals(TransformationType.ONLY_CIPHER)){
-            return cipherValue;
-        }
         if (DataMaskingConstants.ENCRYPTION_INLINE.equalsIgnoreCase(maskingFormat.getFormat())) {
             return DataMaskingConstants.MASKING_PREFIX + maskedValue + "|" + cipherValue;
         } else {

@@ -233,9 +233,13 @@ class JacksonAnnotationProcessorTests {
     void testOnlyCipherRoundTrip() {
         JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
 
-        String jsonValue = mapper.writeValueAsString(new CipherOnly("Jhon Doe", "4444555566667777"));
+        String jsonValue = mapper.writeValueAsString(new CipherOnly("Jhon Doe", "4444555566667777", "123"));
         assertTrue(jsonValue.contains("\"card\":\"NDQ0NDU1NTU2NjY2Nzc3Nw==\""));
-        assertEquals("4444555566667777", mapper.readValue(jsonValue, CipherOnly.class).getCard());
+        assertTrue(jsonValue.contains("\"pin\":\"MTIz\""));
+
+        CipherOnly read = mapper.readValue(jsonValue, CipherOnly.class);
+        assertEquals("4444555566667777", read.getCard());
+        assertEquals("123", read.getPin());
     }
 
     @Test
@@ -469,6 +473,10 @@ class JacksonAnnotationProcessorTests {
 
         @Mask(queryOnly = TransformationType.ONLY_CIPHER)
         private String card;
+
+        // Shorter than leftVisible + rightVisible: still encrypted, since ONLY_CIPHER writes no masked value.
+        @Mask(queryOnly = TransformationType.ONLY_CIPHER, leftVisible = 2, rightVisible = 2)
+        private String pin;
     }
 
     public static class DummyCipher implements DataCipher {
