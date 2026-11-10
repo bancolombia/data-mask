@@ -17,6 +17,7 @@ import java.util.Map;
 
 public class JsonSerializer extends StdSerializer<DataMask<?>> {
 
+    private static final JsonMapper MAPPER = new JsonMapper();
     private final DataCipher dataCipher;
 
     public JsonSerializer(Class<DataMask> dataMaskClass, DataCipher dataCipher) { // NOSONAR
@@ -27,8 +28,7 @@ public class JsonSerializer extends StdSerializer<DataMask<?>> {
 
     @Override
     public void serialize(DataMask value, JsonGenerator generator, SerializationContext provider) throws JacksonException {
-        JsonMapper mapper = new JsonMapper();
-        JsonNode objectNode = JsonNodePathUtils.convertValue(value.data(), mapper);
+        JsonNode objectNode = JsonNodePathUtils.convertValue(value.data(), MAPPER);
         Map<IdentifyField, MaskingFormat> values = value.fields();
         findFields(objectNode, values);
         generator.writeTree(objectNode);
