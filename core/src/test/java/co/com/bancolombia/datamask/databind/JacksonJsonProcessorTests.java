@@ -12,6 +12,7 @@ import co.com.bancolombia.datamask.databind.mask.JsonSerializer;
 import co.com.bancolombia.datamask.databind.mask.MaskingFormat;
 import co.com.bancolombia.datamask.databind.unmask.DataUnmasked;
 import co.com.bancolombia.datamask.databind.unmask.JsonDeserializer;
+import co.com.bancolombia.datamask.databind.util.JsonNodePathUtils;
 import co.com.bancolombia.datamask.databind.util.QueryType;
 import co.com.bancolombia.datamask.databind.util.TransformationType;
 import lombok.AllArgsConstructor;
@@ -29,6 +30,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -212,6 +214,89 @@ class JacksonJsonProcessorTests {
         assertTrue(jsonValue.contains("\"guid\":\"14fe161d-6704-48a0-8b08-b3a3b26a5722\""));
     }
 
+
+    @Test
+    void testMaskPathWritesNestedLeafInItsOwnParent() {
+        ObjectMapper mapper = setCipherMapper(new NoOpCipher(), new NoOpDecipher());
+        String json = "{\"customer\":{\"document\":\"1017123456\"}}";
+        var fields = Map.of(new IdentifyField("/document", QueryType.PATH), new MaskingFormat(0, 4));
+
+        String jsonValue = mapper.writeValueAsString(new DataMask<>(json, fields));
+
+        assertEquals("{\"customer\":{\"document\":\"******3456\"}}", jsonValue);
+    }
+
+    @Test
+    void testMaskPathSkippingIntermediateLevels() {
+        ObjectMapper mapper = setCipherMapper(new NoOpCipher(), new NoOpDecipher());
+        String json = "{\"body\":{\"customer\":{\"document\":\"1017123456\"}," +
+                "\"cards\":[{\"number\":\"4111111111111111\"}]}}";
+        var fields = Map.of(
+                new IdentifyField("/customer/document", QueryType.PATH), new MaskingFormat(0, 4),
+                new IdentifyField("/cards/0/number", QueryType.PATH), new MaskingFormat(0, 4));
+
+        String jsonValue = mapper.writeValueAsString(new DataMask<>(json, fields));
+
+        assertEquals("{\"body\":{\"customer\":{\"document\":\"******3456\"}," +
+                "\"cards\":[{\"number\":\"************1111\"}]}}", jsonValue);
+    }
+
+    @Test
+    void testMaskPathWithOutOfRangeIndex() {
+        String json = "{\"cards\":[{\"number\":\"4111111111111111\"}],\"number\":\"keep\"}";
+        assertPathError(json, "/cards/5/number", "Index \"5\" not found in tree.");
+        assertPathError(json, "/cards/5", "Index \"5\" not found in tree.");
+    }
+
+    @Test
+    void testMaskPathWithNonNumericIndex() {
+        String json = "{\"cards\":[{\"number\":\"4111111111111111\"}]}";
+        assertPathError(json, "/cards/x/number", "Index \"x\" not found in tree.");
+    }
+
+    @Test
+    void testMaskPathEndingOnArrayElement() {
+        assertPathError("{\"tags\":[\"secret-a\",\"secret-b\"]}", "/tags/0",
+                JsonNodePathUtils.ARRAY_ELEMENT_EXCEPTION + "0");
+        assertPathError("{\"cards\":[{\"number\":\"4111111111111111\"}]}", "/cards/0",
+                JsonNodePathUtils.ARRAY_ELEMENT_EXCEPTION + "0");
+    }
+
+    @Test
+    void testUnmaskPathEncryptedObject() {
+        ObjectMapper mapper = setCipherMapper(new DummyCipher(), new DummyDecipher());
+        String encrypted = new DummyCipher().cipher("9999888877776666");
+        String json = "{\"name\":\"Acme enterprises\",\"card\":{\"masked\":\"999*********6666\"," +
+                "\"enc\":\"" + encrypted + "\"}}";
+        var fields = Map.of(new IdentifyField("/card", QueryType.PATH), new MaskingFormat(TransformationType.ALL));
+
+        Company company = mapper.convertValue(new DataUnmasked(json, fields), Company.class);
+
+        assertEquals("9999888877776666", company.getCard());
+    }
+
+    @Test
+    void testUnmaskPathWritesNestedLeafInItsOwnParent() {
+        ObjectMapper mapper = setCipherMapper(new DummyCipher(), new DummyDecipher());
+        String encrypted = new DummyCipher().cipher("1017123456");
+        String json = "{\"customer\":{\"document\":\"masked_pair=******3456|" + encrypted + "\"}}";
+        var fields = Map.of(new IdentifyField("/document", QueryType.PATH), new MaskingFormat(TransformationType.ALL));
+
+        String jsonValue = mapper.writeValueAsString(new DataUnmasked(json, fields));
+
+        assertEquals("{\"customer\":{\"document\":\"1017123456\"}}", jsonValue);
+    }
+
+    private void assertPathError(String json, String path, String message) {
+        ObjectMapper mapper = setCipherMapper(new NoOpCipher(), new NoOpDecipher());
+        var dataMask = new DataMask<>(json, Map.of(new IdentifyField(path, QueryType.PATH), new MaskingFormat(0, 4)));
+        Throwable error = assertThrows(Exception.class, () -> mapper.writeValueAsString(dataMask));
+        while (error.getCause() != null && error.getCause() != error) {
+            error = error.getCause();
+        }
+        assertEquals(IllegalArgumentException.class, error.getClass());
+        assertEquals(message, error.getMessage());
+    }
 
     @Data
     @AllArgsConstructor
