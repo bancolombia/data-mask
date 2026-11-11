@@ -95,24 +95,21 @@ public class JsonDeserializer extends StdSerializer<DataUnmasked> {
 
     private void findFieldForPath(JsonNode node, String[] querySplit) {
         var pathContext = JsonNodePathUtils.navigatePath(node, querySplit);
-        var previousContext = pathContext.getContext();
-        var nodeParent = pathContext.getParent();
-        var pathPart = pathContext.getPathPart();
-        if (previousContext.isValueNode()) {
-            if (previousContext.isNumber()) {
+        var context = pathContext.context();
+        var nodeParent = pathContext.parent();
+        var pathPart = pathContext.pathPart();
+        if (isEncryptedObject(context)) {
+            decipherValueObject(context, pathPart, nodeParent);
+        } else if (context.isValueNode()) {
+            if (context.isNumber()) {
                 throw new IllegalArgumentException(JsonNodePathUtils.FORMAT_EXCEPTION);
-            } else {
-                if (isEncryptedObject(previousContext)) {
-                    decipherValueObject(node, pathPart, nodeParent);
-                    return;
-                } else if (isEncryptedString(previousContext)) {
-                    String[] maskedValuesInfo = MaskUtils.split(previousContext.asString());
-                    var value = maskedValuesInfo[1];
-                    decipherValue(value, pathPart, nodeParent);
-                    return;
-                }
-                this.decipherValue(previousContext.stringValue(), pathPart, nodeParent);
             }
+            if (isEncryptedString(context)) {
+                String[] maskedValuesInfo = MaskUtils.split(context.asString());
+                decipherValue(maskedValuesInfo[1], pathPart, nodeParent);
+                return;
+            }
+            this.decipherValue(context.stringValue(), pathPart, nodeParent);
         }
     }
 

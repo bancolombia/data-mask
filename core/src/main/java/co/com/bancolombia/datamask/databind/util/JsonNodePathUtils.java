@@ -1,18 +1,17 @@
 package co.com.bancolombia.datamask.databind.util;
 
-import lombok.Getter;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.node.ArrayNode;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class JsonNodePathUtils {
 
     public static final String SEPARATOR = "/";
     public static final String FORMAT_EXCEPTION = "DataMask only support fields in String format";
     public static final String NOT_FOUND_IN_TREE = " not found in tree.";
-
-    private JsonNodePathUtils() {
-    }
+    public static final String ARRAY_ELEMENT_EXCEPTION = "PATH must end on an object field, not on an array element: ";
 
     public static JsonNode convertValue(Object node, JsonMapper mapper) {
         if (node instanceof String) {
@@ -21,68 +20,64 @@ public final class JsonNodePathUtils {
         return mapper.valueToTree(node);
     }
 
+    /**
+     * Resolves a PATH query. Each field segment is looked up as a direct child first and then in the
+     * subtree, so a path may skip intermediate levels. The returned parent is always the node that
+     * actually holds the resolved value. A segment that follows an array is read as an index.
+     */
     public static PathContext navigatePath(JsonNode node, String[] querySplit) {
-        var previousContext = node;
-        var nodeParent = node;
-        var pathPart = "";
-        var nodeParentArray = node;
-        var arrayNodeFound = false;
-        JsonNode newContext;
-        for (String element : querySplit) {
-            pathPart = element;
+        var context = new PathContext(node, node, "");
+        var expectIndex = false;
+        for (String pathPart : querySplit) {
             if (!pathPart.isEmpty()) {
-                if (arrayNodeFound) {
-                    nodeParent = findArrayParent(nodeParentArray, pathPart, nodeParent);
-                    previousContext = nodeParent;
-                    newContext = nodeParent;
-                    arrayNodeFound = false;
-                } else {
-                    newContext = findContext(previousContext, pathPart);
-                    previousContext = newContext;
-                }
-                if (!newContext.isValueNode()) {
-                    nodeParent = newContext;
-                }
-                if (newContext.isArray()) {
-                    nodeParentArray = newContext;
-                    arrayNodeFound = true;
-                }
+                context = expectIndex
+                        ? findArrayElement(context.context(), pathPart)
+                        : findField(context.context(), pathPart);
+                expectIndex = context.context().isArray();
             }
         }
-        return new PathContext(previousContext, nodeParent, pathPart);
-    }
-
-    private static JsonNode findArrayParent(JsonNode arrayNodeParent, String pathPart, JsonNode referenceParent) {
-        int index = Integer.parseInt(pathPart);
-        var context = (ArrayNode) arrayNodeParent;
-
-        for (int i = 0; i < context.size(); i++) {
-            if (i == index && !context.get(i).isValueNode()) {
-                referenceParent = context.get(i);
-                return referenceParent;
-            }
+        if (!context.pathPart().isEmpty() && context.parent().isArray()) {
+            throw new IllegalArgumentException(ARRAY_ELEMENT_EXCEPTION + context.pathPart());
         }
-        return referenceParent;
+        return context;
     }
 
-    private static JsonNode findContext(JsonNode node, String pathPart) {
-        JsonNode context = node.findValue(pathPart);
+    private static PathContext findArrayElement(JsonNode array, String pathPart) {
+        int index;
+        try {
+            index = Integer.parseInt(pathPart);
+        } catch (NumberFormatException e) {
+            index = -1;
+        }
+        if (index < 0 || index >= array.size()) {
+            throw new IllegalArgumentException("Index \"" + pathPart + "\"" + NOT_FOUND_IN_TREE);
+        }
+        return new PathContext(array.get(index), array, pathPart);
+    }
+
+    private static PathContext findField(JsonNode node, String pathPart) {
+        var context = searchField(node, pathPart);
         if (context == null) {
             throw new IllegalArgumentException("\"" + pathPart + "\"" + NOT_FOUND_IN_TREE);
         }
         return context;
     }
 
-    @Getter
-    public static class PathContext {
-        private final JsonNode context;
-        private final JsonNode parent;
-        private final String pathPart;
-
-        public PathContext(JsonNode context, JsonNode parent, String pathPart) {
-            this.context = context;
-            this.parent = parent;
-            this.pathPart = pathPart;
+    // Same lookup order as JsonNode.findValue, but keeps the parent of the match.
+    private static PathContext searchField(JsonNode node, String pathPart) {
+        var child = node.get(pathPart);
+        if (child != null) {
+            return new PathContext(child, node, pathPart);
         }
+        for (JsonNode value : node.values()) {
+            var context = searchField(value, pathPart);
+            if (context != null) {
+                return context;
+            }
+        }
+        return null;
+    }
+
+    public record PathContext(JsonNode context, JsonNode parent, String pathPart) {
     }
 }

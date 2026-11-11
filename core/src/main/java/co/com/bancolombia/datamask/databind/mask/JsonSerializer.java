@@ -50,13 +50,13 @@ public class JsonSerializer extends StdSerializer<DataMask<?>> {
     private void findFieldForPath(JsonNode node, IdentifyField identifyField,
                                   Map<IdentifyField, MaskingFormat> maskField, String[] querySplit) {
         var pathContext = JsonNodePathUtils.navigatePath(node, querySplit);
-        var previousContext = pathContext.getContext();
+        var previousContext = pathContext.context();
         if (previousContext.isValueNode()) {
             if (previousContext.isNumber()) {
                 throw new IllegalArgumentException(JsonNodePathUtils.FORMAT_EXCEPTION);
             } else {
                 this.applyMask(previousContext.stringValue(), maskField.get(identifyField),
-                        pathContext.getPathPart(), (ObjectNode) pathContext.getParent());
+                        pathContext.pathPart(), (ObjectNode) pathContext.parent());
             }
         }
     }
