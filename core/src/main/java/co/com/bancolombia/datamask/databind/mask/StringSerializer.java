@@ -10,8 +10,7 @@ import tools.jackson.databind.ser.std.StdSerializer;
 
 public class StringSerializer extends StdSerializer<String> {
     private static final JsonMapper MAPPER = new JsonMapper();
-    private final MaskingFormat maskingFormat;
-    private final DataCipher dataCipher;
+    private final MaskSerializerCommons maskSerializerCommons;
 
     public StringSerializer(int leftVisible,
                             int rightVisible,
@@ -22,14 +21,14 @@ public class StringSerializer extends StdSerializer<String> {
                             String separator,
                             DataCipher dataCipher) {
         super(String.class);
-        maskingFormat = new MaskingFormat(leftVisible, rightVisible, isEmail, isMultiMask, separator,
+        var maskingFormat = new MaskingFormat(leftVisible, rightVisible, isEmail, isMultiMask, separator,
                 transformationType, format);
-        this.dataCipher = dataCipher;
+        this.maskSerializerCommons = MaskSerializerCommons.of(maskingFormat, dataCipher);
     }
 
     @Override
     public void serialize(String value, JsonGenerator generator, SerializationContext provider) throws JacksonException {
-        Object resultMask = MaskSerializerCommons.of(maskingFormat, dataCipher).applyMask(value);
+        Object resultMask = maskSerializerCommons.applyMask(value);
         if (resultMask instanceof String resultMaskStr) {
             generator.writeString(resultMaskStr);
         } else {

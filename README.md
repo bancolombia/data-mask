@@ -146,6 +146,10 @@ processes.
 
 User of this library must define implementation for both interfaces.
 
+Both implementations must be thread-safe. The `MaskingObjectMapper` shares a single instance of each one across all
+the threads that serialize or deserialize with it, so `cipher` and `decipher` are called concurrently. Avoid mutable
+state, or protect it, and do not share non-thread-safe objects such as `javax.crypto.Cipher` between calls.
+
 Dummy Example:
 
 ```java
