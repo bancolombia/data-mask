@@ -41,4 +41,44 @@ class MaskUtilsTests {
     void testMaskNullValue() {
         Assertions.assertNull(MaskUtils.mask(null, 5, 4));
     }
+
+    @Test
+    void testMultiMaskWithSpaceSeparator() {
+        Assertions.assertEquals("H***o W***d", MaskUtils.mask("Hello World", 1, 1, true, " "));
+    }
+
+    @Test
+    void testMultiMaskWithRegexMetacharacterSeparators() {
+        Assertions.assertEquals("1**4.5**8", MaskUtils.mask("1234.5678", 1, 1, true, "."));
+        Assertions.assertEquals("1**4|5**8", MaskUtils.mask("1234|5678", 1, 1, true, "|"));
+        Assertions.assertEquals("1**4+5**8", MaskUtils.mask("1234+5678", 1, 1, true, "+"));
+        Assertions.assertEquals("1**4*5**8", MaskUtils.mask("1234*5678", 1, 1, true, "*"));
+    }
+
+    @Test
+    void testMultiMaskWithMultiCharacterSeparators() {
+        Assertions.assertEquals("1**4--5**8", MaskUtils.mask("1234--5678", 1, 1, true, "--"));
+        Assertions.assertEquals("J**n, M**y", MaskUtils.mask("John, Mary", 1, 1, true, ", "));
+    }
+
+    @Test
+    void testMultiMaskPreservesEmptyParts() {
+        Assertions.assertEquals("1**4,,5**8,", MaskUtils.mask("1234,,5678,", 1, 1, true, ","));
+    }
+
+    @Test
+    void testMultiMaskWithoutSeparatorMasksWholeValue() {
+        Assertions.assertEquals("H*********d", MaskUtils.mask("Hello World", 1, 1, true, null));
+        Assertions.assertEquals("H*********d", MaskUtils.mask("Hello World", 1, 1, true, ""));
+    }
+
+    @Test
+    void testMaskAsEmailDefaultUsesTwoVisibleCharactersOnEachSide() {
+        String email = "jhon.doe12@somedomain.com";
+        String masked = MaskUtils.maskAsEmail(email);
+
+        Assertions.assertEquals(MaskUtils.maskAsEmail(email, 2, 2), masked);
+        Assertions.assertTrue(masked.startsWith("jh*"));
+        Assertions.assertTrue(masked.endsWith("12@somedomain.com"));
+    }
 }
