@@ -13,6 +13,7 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 import tools.jackson.databind.ser.std.StdSerializer;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class JsonSerializer extends StdSerializer<DataMask<?>> {
@@ -30,11 +31,21 @@ public class JsonSerializer extends StdSerializer<DataMask<?>> {
     public void serialize(DataMask value, JsonGenerator generator, SerializationContext provider) throws JacksonException {
         JsonNode objectNode = JsonNodePathUtils.convertValue(value.data(), MAPPER);
         Map<IdentifyField, MaskingFormat> values = value.fields();
-        findFields(objectNode, values);
+        findFields(objectNode, buildMaskers(values));
         generator.writeTree(objectNode);
     }
 
-    private void findFields(JsonNode node, Map<IdentifyField, MaskingFormat> maskField) {
+    /**
+     * Builds one {@link MaskSerializerCommons} per configured field, so every value matched by that field
+     * reuses it instead of creating a new instance for each masked value.
+     */
+    private Map<IdentifyField, MaskSerializerCommons> buildMaskers(Map<IdentifyField, MaskingFormat> fields) {
+        Map<IdentifyField, MaskSerializerCommons> maskers = new HashMap<>();
+        fields.forEach((field, format) -> maskers.put(field, MaskSerializerCommons.of(format, dataCipher)));
+        return maskers;
+    }
+
+    private void findFields(JsonNode node, Map<IdentifyField, MaskSerializerCommons> maskField) {
         maskField.keySet().stream().filter(identifyField ->
                 identifyField.getQueryType().equals(QueryType.PATH)).forEach(identifyField -> {
             String[] querySplit = identifyField.getQuery().split(JsonNodePathUtils.SEPARATOR);
@@ -48,7 +59,7 @@ public class JsonSerializer extends StdSerializer<DataMask<?>> {
     }
 
     private void findFieldForPath(JsonNode node, IdentifyField identifyField,
-                                  Map<IdentifyField, MaskingFormat> maskField, String[] querySplit) {
+                                  Map<IdentifyField, MaskSerializerCommons> maskField, String[] querySplit) {
         var pathContext = JsonNodePathUtils.navigatePath(node, querySplit);
         var previousContext = pathContext.getContext();
         if (previousContext.isValueNode()) {
@@ -61,7 +72,7 @@ public class JsonSerializer extends StdSerializer<DataMask<?>> {
         }
     }
 
-    private void findFieldsForName(JsonNode node, Map<IdentifyField, MaskingFormat> maskField,
+    private void findFieldsForName(JsonNode node, Map<IdentifyField, MaskSerializerCommons> maskField,
                                    IdentifyField identifyField, JsonNode parent) {
         if (node instanceof ArrayNode array) {
             for (int i = 0; i < array.size(); i++) {
@@ -78,9 +89,9 @@ public class JsonSerializer extends StdSerializer<DataMask<?>> {
         }
     }
 
-    private void applyMask(String value, MaskingFormat format, String field, ObjectNode node) {
+    private void applyMask(String value, MaskSerializerCommons masker, String field, ObjectNode node) {
         try {
-            Object resultMask = MaskSerializerCommons.of(format, dataCipher).applyMask(value);
+            Object resultMask = masker.applyMask(value);
             if (resultMask instanceof String resultMaskStr) {
                 node.put(field, resultMaskStr);
             } else {
