@@ -83,9 +83,7 @@ public class JsonDeserializer extends StdSerializer<DataUnmasked> {
             }
         } else if (node.isString() && identifyField != null && maskField.containsKey(identifyField)) {
             if (isEncryptedString(node)) {
-                String[] maskedValuesInfo = MaskUtils.split(node.asString());
-                var value = maskedValuesInfo[1];
-                decipherValue(value, identifyField.getQuery(), parent);
+                decipherValue(encryptedValue(node.asString()), identifyField.getQuery(), parent);
                 return;
             }
             decipherValue(node.stringValue(), identifyField.getQuery(), parent);
@@ -106,9 +104,7 @@ public class JsonDeserializer extends StdSerializer<DataUnmasked> {
                     decipherValueObject(node, pathPart, nodeParent);
                     return;
                 } else if (isEncryptedString(previousContext)) {
-                    String[] maskedValuesInfo = MaskUtils.split(previousContext.asString());
-                    var value = maskedValuesInfo[1];
-                    decipherValue(value, pathPart, nodeParent);
+                    decipherValue(encryptedValue(previousContext.asString()), pathPart, nodeParent);
                     return;
                 }
                 this.decipherValue(previousContext.stringValue(), pathPart, nodeParent);
@@ -119,6 +115,11 @@ public class JsonDeserializer extends StdSerializer<DataUnmasked> {
     private void decipherValueObject(JsonNode node, String fieldName, JsonNode parent) {
         ((ObjectNode) parent).put(fieldName,
                 dataDecipher.decipher(node.findValue(DataMaskingConstants.ENCRYPTED_ATTR).asString()));
+    }
+
+    private static String encryptedValue(String inlineValue) {
+        return MaskUtils.findEncryptedValue(inlineValue)
+                .orElseThrow(() -> new IllegalArgumentException(MaskUtils.INLINE_FORMAT_EXCEPTION));
     }
 
     private void decipherValue(String value, String fieldName, JsonNode parent) {

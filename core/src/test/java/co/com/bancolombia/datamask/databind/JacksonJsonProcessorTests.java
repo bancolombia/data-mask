@@ -2,6 +2,7 @@ package co.com.bancolombia.datamask.databind;
 
 import co.com.bancolombia.datamask.DataMaskingConstants;
 import co.com.bancolombia.datamask.Mask;
+import co.com.bancolombia.datamask.MaskUtils;
 import co.com.bancolombia.datamask.cipher.DataCipher;
 import co.com.bancolombia.datamask.cipher.DataDecipher;
 import co.com.bancolombia.datamask.cipher.NoOpCipher;
@@ -12,12 +13,15 @@ import co.com.bancolombia.datamask.databind.mask.JsonSerializer;
 import co.com.bancolombia.datamask.databind.mask.MaskingFormat;
 import co.com.bancolombia.datamask.databind.unmask.DataUnmasked;
 import co.com.bancolombia.datamask.databind.unmask.JsonDeserializer;
+import co.com.bancolombia.datamask.databind.util.JsonNodePathUtils;
 import co.com.bancolombia.datamask.databind.util.QueryType;
 import co.com.bancolombia.datamask.databind.util.TransformationType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
@@ -29,6 +33,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -233,6 +238,40 @@ class JacksonJsonProcessorTests {
         String jsonValue = mapper.writeValueAsString(new DataMask<>("{\"name\":\"Hello World\"}", fields));
 
         assertEquals("{\"name\":\"H*********d\"}", jsonValue);
+    }
+
+    @ParameterizedTest
+    @EnumSource(QueryType.class)
+    void testUnmaskingInlineValuesWithSeparatorInMaskedPart(QueryType queryType) {
+        ObjectMapper mapper = setCipherMapper(new DummyCipher(), new DummyDecipher());
+        String json = "{\"name\":\"Jhon Doe\",\"code\":\"a|b|cdefgh\",\"card\":\"abcdef||gh|\"}";
+        String prefix = queryType == QueryType.PATH ? JsonNodePathUtils.SEPARATOR : "";
+        var fields = Map.of(
+                new IdentifyField(prefix + "code", queryType), new MaskingFormat(4, 0, false, TransformationType.ALL),
+                new IdentifyField(prefix + "card", queryType), new MaskingFormat(0, 6, false, TransformationType.ALL));
+
+        String masked = mapper.writeValueAsString(new DataMask<>(json, fields));
+        assertTrue(masked.contains(DataMaskingConstants.MASKING_PREFIX + "a|b|******|"));
+        assertTrue(masked.contains(DataMaskingConstants.MASKING_PREFIX + "*****f||gh||"));
+
+        String unmasked = mapper.writeValueAsString(new DataUnmasked(masked, fields));
+        assertEquals(mapper.readTree(json), mapper.readTree(unmasked));
+    }
+
+    @ParameterizedTest
+    @EnumSource(QueryType.class)
+    void testUnmaskingInlineValueWithoutEncryptedPartThrowsClearError(QueryType queryType) {
+        ObjectMapper mapper = setCipherMapper(new DummyCipher(), new DummyDecipher());
+        String prefix = queryType == QueryType.PATH ? JsonNodePathUtils.SEPARATOR : "";
+        var fields = Map.of(new IdentifyField(prefix + "card", queryType),
+                new MaskingFormat(0, 4, false, TransformationType.ALL));
+
+        for (String card : List.of("masked_pair=************7777", "masked_pair=************7777|")) {
+            var data = new DataUnmasked("{\"card\":\"" + card + "\"}", fields);
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> mapper.writeValueAsString(data));
+            assertEquals(MaskUtils.INLINE_FORMAT_EXCEPTION, e.getMessage());
+        }
     }
 
     @Data

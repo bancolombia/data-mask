@@ -14,6 +14,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tools.jackson.databind.AnnotationIntrospector;
 import tools.jackson.databind.DatabindException;
 import tools.jackson.databind.exc.MismatchedInputException;
@@ -253,6 +255,49 @@ class JacksonAnnotationProcessorTests {
     }
 
     @Test
+    void testInlineValueWithoutEncryptedPartIsAnInputMismatch() {
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+
+        String json = "{\"name\":\"Jhon Doe\",\"email\":\"" + DataMaskingConstants.MASKING_PREFIX + "jh*****|\"}";
+        MismatchedInputException e = assertThrows(MismatchedInputException.class,
+                () -> mapper.readValue(json, Customer.class));
+        assertTrue(e.getMessage().contains("<masked value>|<encrypted value>"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ab|cdefgh", "a|b|cdefgh", "||||abcdef"})
+    void testUnmaskingInlineValueWithSeparatorInLeftVisiblePart(String value) {
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+
+        String jsonValue = mapper.writeValueAsString(new LeftVisibleSeparator(value));
+        assertTrue(jsonValue.contains(DataMaskingConstants.MASKING_PREFIX + value.substring(0, 3)));
+
+        assertEquals(value, mapper.readValue(jsonValue, LeftVisibleSeparator.class).getValue());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"abcdef|gh", "abcdef||gh|"})
+    void testUnmaskingInlineValueWithSeparatorInRightVisiblePart(String value) {
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+
+        String jsonValue = mapper.writeValueAsString(new RightVisibleSeparator(value));
+        assertTrue(jsonValue.contains(value.substring(value.length() - 6) + DataMaskingConstants.MASKING_SEPARATOR));
+
+        assertEquals(value, mapper.readValue(jsonValue, RightVisibleSeparator.class).getValue());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"1234|5678", "1111|2222|3333"})
+    void testUnmaskingInlineMultiMaskValueWithSeparator(String value) {
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+
+        String jsonValue = mapper.writeValueAsString(new MultiMaskSeparator(value));
+        assertTrue(jsonValue.contains(DataMaskingConstants.MASKING_PREFIX + "1**"));
+
+        assertEquals(value, mapper.readValue(jsonValue, MultiMaskSeparator.class).getValue());
+    }
+
+    @Test
     void testNoMasking() {
         JsonMapper mapper = new MaskingObjectMapper();
         Person p = new Person("Jhon Doe", "");
@@ -308,6 +353,31 @@ class JacksonAnnotationProcessorTests {
 
         @Mask(queryOnly = TransformationType.ALL, isEmail = true, leftVisible = 2, rightVisible = 1)
         private String email;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class LeftVisibleSeparator {
+        @Mask(leftVisible = 3, queryOnly = TransformationType.ALL)
+        private String value;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class RightVisibleSeparator {
+        @Mask(rightVisible = 6, queryOnly = TransformationType.ALL)
+        private String value;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class MultiMaskSeparator {
+        @Mask(leftVisible = 1, rightVisible = 1, isMultiMask = true, separator = "|",
+                queryOnly = TransformationType.ALL)
+        private String value;
     }
 
     @Data
