@@ -31,21 +31,14 @@ public final class MaskUtils {
         if (shows >= length || (leftCount == 0 && rightCount == 0)) {
             return StringUtils.repeat("*", length);
         }
-        if (isMultiMask && fieldValue.contains(separator)) {
-            String[] parts = fieldValue.split(separator, -1);
-            StringBuilder result = new StringBuilder();
-
-            for (String part : parts) {
-                result.append(mask(part, showFirstDigitCount, showLastDigitCount, false, null));
-                result.append(separator);
+        if (isMultiMask && StringUtils.isNotEmpty(separator) && fieldValue.contains(separator)) {
+            String[] parts = StringUtils.splitByWholeSeparatorPreserveAllTokens(fieldValue, separator);
+            for (int i = 0; i < parts.length; i++) {
+                parts[i] = mask(parts[i], showFirstDigitCount, showLastDigitCount, false, null);
             }
-
-            result.deleteCharAt(result.length() - 1);
-            return result.toString();
-        } else {
-            return StringUtils.overlay(fieldValue, StringUtils.repeat("*", hidden), leftCount, leftCount + hidden);
+            return String.join(separator, parts);
         }
-
+        return StringUtils.overlay(fieldValue, StringUtils.repeat("*", hidden), leftCount, leftCount + hidden);
     }
 
     public static String maskAsEmail(String fieldValue) {

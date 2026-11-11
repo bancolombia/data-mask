@@ -213,6 +213,28 @@ class JacksonJsonProcessorTests {
     }
 
 
+    @Test
+    void testMultiMaskWithNullSeparatorMasksWholeValue() {
+        ObjectMapper mapper = setCipherMapper(new NoOpCipher(), new NoOpDecipher());
+        var fields = Map.of(new IdentifyField("name", QueryType.NAME),
+                new MaskingFormat(1, 1, false, true, null, TransformationType.ONLY_MASK));
+
+        String jsonValue = mapper.writeValueAsString(new DataMask<>("{\"name\":\"Hello World\"}", fields));
+
+        assertEquals("{\"name\":\"H*********d\"}", jsonValue);
+    }
+
+    @Test
+    void testNullMultiMaskFlagIsTreatedAsFalse() {
+        ObjectMapper mapper = setCipherMapper(new NoOpCipher(), new NoOpDecipher());
+        var fields = Map.of(new IdentifyField("name", QueryType.NAME),
+                new MaskingFormat(1, 1, false, null, " ", TransformationType.ONLY_MASK));
+
+        String jsonValue = mapper.writeValueAsString(new DataMask<>("{\"name\":\"Hello World\"}", fields));
+
+        assertEquals("{\"name\":\"H*********d\"}", jsonValue);
+    }
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

@@ -50,7 +50,7 @@ public class MaskSerializerCommons {
             return MaskUtils.mask(value,
                     maskingFormat.getLeftVisible(),
                     maskingFormat.getRightVisible(),
-                    maskingFormat.getIsMultiMask(),
+                    TRUE.equals(maskingFormat.getIsMultiMask()),
                     maskingFormat.getSeparator());
         }
     }
