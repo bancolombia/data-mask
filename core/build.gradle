@@ -1,4 +1,4 @@
 dependencies {
-    api 'org.apache.commons:commons-lang3:3.21.0'
+    api 'org.apache.commons:commons-lang3:3.22.0'
     implementation 'tools.jackson.core:jackson-databind'
 }
