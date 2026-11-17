@@ -66,6 +66,26 @@ class JacksonJsonProcessorTests {
     }
 
     @Test
+    void testShortValuesAreMaskedAndEncryptedByNameAndPath() {
+        ObjectMapper mapper = setCipherMapper(new DummyCipher(), new DummyDecipher());
+        String json = "{\"pin\":\"1234\",\"cvv\":\"12\"}";
+        var format = new MaskingFormat(2, 2, false, TransformationType.ALL);
+        var fieldsByName = Map.of(new IdentifyField("pin", QueryType.NAME), format,
+                new IdentifyField("cvv", QueryType.NAME), format);
+        var fieldsByPath = Map.of(new IdentifyField("/pin", QueryType.PATH), format,
+                new IdentifyField("/cvv", QueryType.PATH), format);
+
+        for (var fields : List.of(fieldsByName, fieldsByPath)) {
+            String masked = mapper.writeValueAsString(new DataMask<>(json, fields));
+            assertEquals("{\"pin\":\"" + DataMaskingConstants.MASKING_PREFIX + "****|MTIzNA==\","
+                    + "\"cvv\":\"" + DataMaskingConstants.MASKING_PREFIX + "**|MTI=\"}", masked);
+
+            String unmasked = mapper.writeValueAsString(new DataUnmasked(masked, fields));
+            assertEquals(mapper.readTree(json), mapper.readTree(unmasked));
+        }
+    }
+
+    @Test
     void testMaskingInlineFormat() {
         ObjectMapper mapper = setCipherMapper(new DummyCipher(), new NoOpDecipher());
         Customer c = new Customer("Jhon Doe", "jhon.doe12@somedomain.com");

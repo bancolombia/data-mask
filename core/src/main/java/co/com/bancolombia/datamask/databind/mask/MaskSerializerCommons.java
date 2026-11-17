@@ -17,12 +17,12 @@ public class MaskSerializerCommons {
     private final DataCipher dataCipher;
 
     public Object applyMask(String value) {
+        if (StringUtils.isBlank(value)) {
+            return value;
+        }
         // ONLY_CIPHER writes no masked value, so the visible-character rules do not apply: every value is encrypted.
         if (maskingFormat.getTransformationType().equals(TransformationType.ONLY_CIPHER)) {
-            return StringUtils.isBlank(value) ? value : dataCipher.cipher(value);
-        }
-        if (!isSuitableForMasking(value)) {
-            return value;
+            return dataCipher.cipher(value);
         }
         if (maskingFormat.getTransformationType().equals(TransformationType.ONLY_MASK)) {
             return generateMaskedValue(value);
@@ -44,8 +44,12 @@ public class MaskSerializerCommons {
         }
     }
 
+    /**
+     * Values that are not longer than the visible characters are masked entirely by {@link MaskUtils#mask}, so they
+     * are never written in clear text. They never reach {@link MaskUtils#maskAsEmail}, which does not handle them.
+     */
     private String generateMaskedValue(String value) {
-        if (TRUE.equals(maskingFormat.getIsEmail())) {
+        if (TRUE.equals(maskingFormat.getIsEmail()) && value.length() > visibleCharacterCount()) {
             return MaskUtils.maskAsEmail(value,maskingFormat.getLeftVisible(), maskingFormat.getRightVisible());
         } else {
             return MaskUtils.mask(value,
@@ -56,11 +60,7 @@ public class MaskSerializerCommons {
         }
     }
 
-    private boolean isSuitableForMasking(String value) {
-        if (StringUtils.isNotBlank(value)) {
-            int visibleCharacterCount = maskingFormat.getLeftVisible() + maskingFormat.getRightVisible();
-            return value.length() > visibleCharacterCount;
-        }
-        return false;
+    private int visibleCharacterCount() {
+        return maskingFormat.getLeftVisible() + maskingFormat.getRightVisible();
     }
 }
