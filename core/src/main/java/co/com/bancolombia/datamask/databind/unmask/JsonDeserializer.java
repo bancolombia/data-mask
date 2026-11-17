@@ -28,6 +28,7 @@ public class JsonDeserializer extends StdSerializer<DataUnmasked> {
 
     public static final String INVALID_CALLER_EXCEPTION = "This method haven't enable for TransformationType.ONLY_MASK";
 
+    private static final JsonMapper MAPPER = new JsonMapper();
     private final DataDecipher dataDecipher;
 
     public JsonDeserializer(Class<DataUnmasked> clazz, DataDecipher dataCipher) {
@@ -37,11 +38,10 @@ public class JsonDeserializer extends StdSerializer<DataUnmasked> {
 
     @Override
     public void serialize(DataUnmasked value, JsonGenerator generator, SerializationContext provider) throws JacksonException {
-        JsonMapper mapper = new JsonMapper();
-        var objectNode = JsonNodePathUtils.convertValue(value.getData(), mapper);
+        var objectNode = JsonNodePathUtils.convertValue(value.getData(), MAPPER);
         Map<IdentifyField, MaskingFormat> values = value.getFields();
         findFields(objectNode, values);
-        mapper.writeValue(generator, objectNode);
+        MAPPER.writeValue(generator, objectNode);
     }
 
     private void findFields(JsonNode node, Map<IdentifyField, MaskingFormat> maskField) {
