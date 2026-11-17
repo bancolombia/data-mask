@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 public final class DataMaskingConstants {
 
     public static final String MASKING_PREFIX = "masked_pair=";
+    public static final String MASKING_SEPARATOR = "|";
     public static final String MASKING_ATTR = "masked";
     public static final String ENCRYPTED_ATTR = "enc";
 

@@ -37,7 +37,8 @@ public class MaskSerializerCommons {
     private Object writeWithCipher(String plainValue, String maskedValue) {
         var cipherValue = dataCipher.cipher(plainValue);
         if (DataMaskingConstants.ENCRYPTION_INLINE.equalsIgnoreCase(maskingFormat.getFormat())) {
-            return DataMaskingConstants.MASKING_PREFIX + maskedValue + "|" + cipherValue;
+            return DataMaskingConstants.MASKING_PREFIX + maskedValue
+                    + DataMaskingConstants.MASKING_SEPARATOR + cipherValue;
         } else {
             return new MaskedProperty(maskedValue, cipherValue);
         }

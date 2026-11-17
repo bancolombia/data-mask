@@ -2,6 +2,7 @@ package co.com.bancolombia.datamask;
 
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.JsonNodeType;
 
@@ -9,6 +10,9 @@ import java.util.Optional;
 
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public final class MaskUtils {
+
+    public static final String INLINE_FORMAT_EXCEPTION = "Expected " + DataMaskingConstants.MASKING_PREFIX
+            + "<masked value>" + DataMaskingConstants.MASKING_SEPARATOR + "<encrypted value>";
 
     public static String mask(String fieldValue) {
         return MaskUtils.mask(fieldValue, 0, 0);
@@ -62,9 +66,30 @@ public final class MaskUtils {
         return Math.max(input, 0);
     }
 
+    /**
+     * Splits an inline value ({@code masked_pair=<masked value>|<encrypted value>}) into the masked value and the
+     * encrypted value. The prefix is removed only at the start, and the value is split on the <b>last</b> {@code |}:
+     * the masked value comes from the original data and may contain {@code |}, while the encrypted value must not.
+     *
+     * @return the masked value and the encrypted value, or a single element when the input has no {@code |}.
+     */
     public static String[] split(String input) {
-        return input.replace(DataMaskingConstants.MASKING_PREFIX, "")
-                .split("\\|");
+        String value = Strings.CS.removeStart(input, DataMaskingConstants.MASKING_PREFIX);
+        int separatorIndex = value.lastIndexOf(DataMaskingConstants.MASKING_SEPARATOR);
+        if (separatorIndex < 0) {
+            return new String[]{value};
+        }
+        return new String[]{value.substring(0, separatorIndex),
+                value.substring(separatorIndex + DataMaskingConstants.MASKING_SEPARATOR.length())};
+    }
+
+    /**
+     * Returns the encrypted value of an inline value ({@code masked_pair=<masked value>|<encrypted value>}), or an
+     * empty {@link Optional} when the input has no {@code |} or its encrypted value is empty.
+     */
+    public static Optional<String> findEncryptedValue(String input) {
+        String[] parts = split(input);
+        return parts.length == 2 && StringUtils.isNotEmpty(parts[1]) ? Optional.of(parts[1]) : Optional.empty();
     }
 
     public static boolean isEncryptedObject(JsonNode node) {

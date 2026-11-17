@@ -3,20 +3,14 @@ package co.com.bancolombia.datamask;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 class MaskUtilsTests {
 
     private final String testString = "Super Simple Example Text";
 
     @Test
     void testMaskDefault() {
-        String json = "{\n" +
-                "        \"name\": \"Jhon Doe\",\n" +
-                "        \"email\": \"Jho**************.com\",\n" +
-                "        \"creditCardNumber\": {\n" +
-                "        \"masked\": \"************5678\",\n" +
-                "        \"enc\": \"dGhpcyBzaG91bGQgYmUgYW4gZWNyeXB0ZWQgdmFsdWUK\"\n" +
-                "        }\n" +
-                "        }";
         Assertions.assertEquals("*************************", MaskUtils.mask(testString));
         Assertions.assertEquals("*************************", MaskUtils.mask(testString,0,0));
         Assertions.assertEquals("*************************", MaskUtils.mask(testString,-1,-1));
@@ -80,5 +74,33 @@ class MaskUtilsTests {
         Assertions.assertEquals(MaskUtils.maskAsEmail(email, 2, 2), masked);
         Assertions.assertTrue(masked.startsWith("jh*"));
         Assertions.assertTrue(masked.endsWith("12@somedomain.com"));
+    }
+
+    @Test
+    void testSplitOnLastSeparator() {
+        Assertions.assertArrayEquals(new String[]{"a|b|cd****", "ZW5j"},
+                MaskUtils.split("masked_pair=a|b|cd****|ZW5j"));
+        Assertions.assertArrayEquals(new String[]{"*****f||gh|", "ZW5j"},
+                MaskUtils.split("masked_pair=*****f||gh||ZW5j"));
+    }
+
+    @Test
+    void testSplitRemovesPrefixOnlyAtStart() {
+        Assertions.assertArrayEquals(new String[]{"xmasked_pair=y", "ZW5j"},
+                MaskUtils.split("masked_pair=xmasked_pair=y|ZW5j"));
+    }
+
+    @Test
+    void testSplitWithoutSeparatorReturnsSingleElement() {
+        Assertions.assertArrayEquals(new String[]{"abc"}, MaskUtils.split("masked_pair=abc"));
+    }
+
+    @Test
+    void testFindEncryptedValue() {
+        Assertions.assertEquals(Optional.of("ZW5j"), MaskUtils.findEncryptedValue("masked_pair=a|b|ZW5j"));
+        Assertions.assertEquals(Optional.of("ZW5j"), MaskUtils.findEncryptedValue("masked_pair=|ZW5j"));
+        Assertions.assertEquals(Optional.empty(), MaskUtils.findEncryptedValue("masked_pair=abc"));
+        Assertions.assertEquals(Optional.empty(), MaskUtils.findEncryptedValue("masked_pair=abc|"));
+        Assertions.assertEquals(Optional.empty(), MaskUtils.findEncryptedValue("masked_pair=a||b|"));
     }
 }

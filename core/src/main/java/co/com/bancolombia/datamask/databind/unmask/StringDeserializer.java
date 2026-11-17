@@ -32,12 +32,11 @@ public class StringDeserializer extends StdDeserializer<String> {
     public String deserialize(JsonParser p, DeserializationContext ctxt) {
         JsonNode node = p.readValueAsTree();
         if (isEncryptedString(node)) {
-            String[] maskedValuesInfo = MaskUtils.split(node.asString());
-            if (maskedValuesInfo.length < 2) {
-                return ctxt.reportInputMismatch(this, "Expected %s<masked value>|<encrypted value>",
-                        DataMaskingConstants.MASKING_PREFIX);
+            Optional<String> encryptedValue = MaskUtils.findEncryptedValue(node.asString());
+            if (encryptedValue.isEmpty()) {
+                return ctxt.reportInputMismatch(this, MaskUtils.INLINE_FORMAT_EXCEPTION);
             }
-            return dataDecipher.decipher(maskedValuesInfo[1]);
+            return dataDecipher.decipher(encryptedValue.get());
         } else if (MaskUtils.isEncryptedObject(node)) {
             return dataDecipher.decipher(node.findValue(DataMaskingConstants.ENCRYPTED_ATTR).asString());
         } else if (isCipherOnly(node)) {
