@@ -349,8 +349,24 @@ Passed via configuration `application.properties` or `application.yaml`
 | secrets.dataMaskKey                   |                   | Name of the secret that holds the symmetric key in AWS Secrets manager. <br> Encryption key for data-masking should be at least 16 bytes. Other lengths supported                     for AES encryption are 24 and 32 bytes. Any given key greater than 16 bytes, and not multiple of 16,  will be derived from first 16 bytes. |
 | dataMask.encryptionContext            | "default_context" | (Optional) The context for additional protection of the encrypted data. See [Usage of Encryption contexts][encryption_context].                                                                                                                                                                                                  |
 | dataMask.keyId                        | [blank]           | (Optional) The key Id                                                                                                                                                                                                                                                                                                            |
-| adapters.aws.secrets-manager.region   |                   | Region for the Secrets Manager service                                                                                                                                                                                                                                                                                           |
+| adapters.aws.secrets-manager.region   |                   | (Required) Region for the Secrets Manager service                                                                                                                                                                                                                                                                                           |
 | adapters.aws.secrets-manager.endpoint |                   | (Optional) for local dev only                                                                                                                                                                                                                                                                                                    |
+
+### Spring configuration
+
+`AwsConfiguration` is a Spring Boot auto-configuration: adding the dependency and setting `secrets.dataMaskKey`
+registers the `DataCipher` and `DataDecipher` beans. Without `secrets.dataMaskKey`, no bean is registered.
+
+- `DataCipher`, `DataDecipher` or `AwsCrypto` beans defined by the application take precedence over the ones of this
+  library.
+- To register the beans explicitly instead of relying on auto-configuration, import the configuration:
+
+```java
+@Configuration
+@Import(AwsConfiguration.class)
+public class DataMaskConfig {
+}
+```
 
 ### Use with Spring-Boot
 

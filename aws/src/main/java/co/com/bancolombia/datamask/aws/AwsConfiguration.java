@@ -13,8 +13,10 @@ import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.jce.JceMasterKey;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 
@@ -22,7 +24,13 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
 
-@Configuration
+/**
+ * Registers the AWS Encryption SDK {@link DataCipher} and {@link DataDecipher}. It is loaded as a Spring Boot
+ * auto-configuration when {@code secrets.dataMaskKey} is set, and can also be imported with
+ * {@code @Import(AwsConfiguration.class)}. Beans of the same type defined by the application take precedence.
+ */
+@AutoConfiguration
+@ConditionalOnProperty("secrets.dataMaskKey")
 public class AwsConfiguration {
 
     private static final String DEFAULT_ALGORITHM = "AES";
@@ -60,6 +68,7 @@ public class AwsConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public AwsCrypto awsCrypto() {
         return AwsCrypto.builder()
                 .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
@@ -69,27 +78,24 @@ public class AwsConfiguration {
 
     @Bean
     @Primary
+    @ConditionalOnMissingBean
     public DataCipher dataCipher(AwsCrypto awsCrypto, JceMasterKey masterKeyProvider) {
         return new AWSEncryptionSdkCipher(awsCrypto, masterKeyProvider);
     }
 
     @Bean
     @Primary
+    @ConditionalOnMissingBean
     public DataDecipher dataDecipher(AwsCrypto awsCrypto, JceMasterKey masterKeyProvider) {
         return new AWSEncryptionSdkDecipher(awsCrypto, masterKeyProvider);
     }
 
     private byte[] validateAndDeriveKey(byte[] key) throws SecretException{
         if (key.length >= 16) {
-            byte[] derivedArray;
-            switch (key.length) {
-                case 16, 24, 32:
-                    derivedArray = key;
-                    break;
-                default:
-                    derivedArray = Arrays.copyOfRange(key, 0, 16);
-            }
-            return derivedArray;
+            return switch (key.length) {
+                case 16, 24, 32 -> key;
+                default -> Arrays.copyOfRange(key, 0, 16);
+            };
         } else {
             throw new SecretException("Encryption key for data-masking should be at least 16 bytes. Other lengths supported " +
                     "for AES encryption are 24 and 32 bytes. Any given key greater than 16 bytes, and not multiple of 16, " +
