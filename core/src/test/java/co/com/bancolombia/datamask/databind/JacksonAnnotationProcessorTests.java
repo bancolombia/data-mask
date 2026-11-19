@@ -298,6 +298,34 @@ class JacksonAnnotationProcessorTests {
     }
 
     @Test
+    void testValuesNotLongerThanVisibleCharactersAreMaskedEntirely() {
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+
+        ShortValues original = new ShortValues("1234", "123", "12", "ab", "ab@bank.com", "ab");
+        String jsonValue = mapper.writeValueAsString(original);
+
+        assertEquals(mapper.readTree("{\"pin\":\"****\","
+                + "\"code\":\"" + DataMaskingConstants.MASKING_PREFIX + "***|" + encode("123") + "\","
+                + "\"cvv\":{\"masked\":\"**\",\"enc\":\"" + encode("12") + "\"},"
+                + "\"alias\":\"**\",\"email\":\"**@bank.com\",\"name\":\"**\"}"), mapper.readTree(jsonValue));
+
+        ShortValues read = mapper.readValue(jsonValue, ShortValues.class);
+        assertEquals("****", read.getPin());
+        assertEquals("123", read.getCode());
+        assertEquals("12", read.getCvv());
+    }
+
+    @Test
+    void testBlankValuesAreNotMasked() {
+        JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
+
+        String jsonValue = mapper.writeValueAsString(new ShortValues("", " ", "", " ", "", " "));
+
+        assertEquals(mapper.readTree("{\"pin\":\"\",\"code\":\" \",\"cvv\":\"\","
+                + "\"alias\":\" \",\"email\":\"\",\"name\":\" \"}"), mapper.readTree(jsonValue));
+    }
+
+    @Test
     void testNoMasking() {
         JsonMapper mapper = new MaskingObjectMapper();
         Person p = new Person("Jhon Doe", "");
@@ -378,6 +406,30 @@ class JacksonAnnotationProcessorTests {
         @Mask(leftVisible = 1, rightVisible = 1, isMultiMask = true, separator = "|",
                 queryOnly = TransformationType.ALL)
         private String value;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ShortValues {
+        @Mask(leftVisible = 2, rightVisible = 2)
+        private String pin;
+
+        @Mask(leftVisible = 2, rightVisible = 2, queryOnly = TransformationType.ALL)
+        private String code;
+
+        @Mask(leftVisible = 1, rightVisible = 1, queryOnly = TransformationType.ALL,
+                format = DataMaskingConstants.ENCRYPTION_AS_OBJECT)
+        private String cvv;
+
+        @Mask(leftVisible = 2, rightVisible = 1, isEmail = true)
+        private String alias;
+
+        @Mask(leftVisible = 2, rightVisible = 1, isEmail = true)
+        private String email;
+
+        @Mask(leftVisible = 1, rightVisible = 1, isMultiMask = true, separator = " ")
+        private String name;
     }
 
     @Data
@@ -563,4 +615,7 @@ class JacksonAnnotationProcessorTests {
         }
     }
 
+    private static String encode(String value) {
+        return Base64.getEncoder().encodeToString(value.getBytes(StandardCharsets.UTF_8));
+    }
 }

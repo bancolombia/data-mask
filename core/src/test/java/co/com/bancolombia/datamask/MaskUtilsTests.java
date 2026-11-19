@@ -72,8 +72,7 @@ class MaskUtilsTests {
         String masked = MaskUtils.maskAsEmail(email);
 
         Assertions.assertEquals(MaskUtils.maskAsEmail(email, 2, 2), masked);
-        Assertions.assertTrue(masked.startsWith("jh*"));
-        Assertions.assertTrue(masked.endsWith("12@somedomain.com"));
+        Assertions.assertEquals("jh******12@somedomain.com", masked);
     }
 
     @Test
@@ -102,5 +101,36 @@ class MaskUtilsTests {
         Assertions.assertEquals(Optional.empty(), MaskUtils.findEncryptedValue("masked_pair=abc"));
         Assertions.assertEquals(Optional.empty(), MaskUtils.findEncryptedValue("masked_pair=abc|"));
         Assertions.assertEquals(Optional.empty(), MaskUtils.findEncryptedValue("masked_pair=a||b|"));
+    }
+
+    @Test
+    void testMaskAsEmailMasksShortLocalPartEntirely() {
+        Assertions.assertEquals("**@bank.com", MaskUtils.maskAsEmail("ab@bank.com", 2, 1));
+        Assertions.assertEquals("*@bank.com", MaskUtils.maskAsEmail("a@bank.com", 2, 1));
+        Assertions.assertEquals("********@x.com", MaskUtils.maskAsEmail("john.doe@x.com", 4, 4));
+    }
+
+    @Test
+    void testMaskAsEmailUsesVisibleCharacterCounts() {
+        Assertions.assertEquals("jo*****e@x.com", MaskUtils.maskAsEmail("john.doe@x.com", 2, 1));
+        Assertions.assertEquals("joh**doe@x.com", MaskUtils.maskAsEmail("john.doe@x.com", 3, 3));
+        Assertions.assertEquals("********@x.com", MaskUtils.maskAsEmail("john.doe@x.com", 0, 0));
+    }
+
+    @Test
+    void testMaskAsEmailWithoutAtFallsBackToMask() {
+        Assertions.assertEquals("ab***f", MaskUtils.maskAsEmail("abcdef", 2, 1));
+        Assertions.assertEquals("ab*d@", MaskUtils.maskAsEmail("abcd@", 2, 1));
+    }
+
+    @Test
+    void testMaskAsEmailSplitsOnLastAt() {
+        Assertions.assertEquals("\"a****\"@x.com", MaskUtils.maskAsEmail("\"a@b.c\"@x.com", 2, 1));
+    }
+
+    @Test
+    void testMaskAsEmailKeepsBlankValues() {
+        Assertions.assertNull(MaskUtils.maskAsEmail(null, 2, 1));
+        Assertions.assertEquals("", MaskUtils.maskAsEmail("", 2, 1));
     }
 }

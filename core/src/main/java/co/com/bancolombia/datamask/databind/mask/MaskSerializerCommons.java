@@ -17,12 +17,12 @@ public class MaskSerializerCommons {
     private final DataCipher dataCipher;
 
     public Object applyMask(String value) {
+        if (StringUtils.isBlank(value)) {
+            return value;
+        }
         // ONLY_CIPHER writes no masked value, so the visible-character rules do not apply: every value is encrypted.
         if (maskingFormat.getTransformationType().equals(TransformationType.ONLY_CIPHER)) {
-            return StringUtils.isBlank(value) ? value : dataCipher.cipher(value);
-        }
-        if (!isSuitableForMasking(value)) {
-            return value;
+            return dataCipher.cipher(value);
         }
         if (maskingFormat.getTransformationType().equals(TransformationType.ONLY_MASK)) {
             return generateMaskedValue(value);
@@ -44,23 +44,18 @@ public class MaskSerializerCommons {
         }
     }
 
+    /**
+     * Values that are not longer than the visible characters are masked entirely by {@link MaskUtils#mask}, so they
+     * are never written in clear text. For emails, this applies to the part before the {@code @}.
+     */
     private String generateMaskedValue(String value) {
         if (TRUE.equals(maskingFormat.getIsEmail())) {
-            return MaskUtils.maskAsEmail(value,maskingFormat.getLeftVisible(), maskingFormat.getRightVisible());
-        } else {
-            return MaskUtils.mask(value,
-                    maskingFormat.getLeftVisible(),
-                    maskingFormat.getRightVisible(),
-                    TRUE.equals(maskingFormat.getIsMultiMask()),
-                    maskingFormat.getSeparator());
+            return MaskUtils.maskAsEmail(value, maskingFormat.getLeftVisible(), maskingFormat.getRightVisible());
         }
-    }
-
-    private boolean isSuitableForMasking(String value) {
-        if (StringUtils.isNotBlank(value)) {
-            int visibleCharacterCount = maskingFormat.getLeftVisible() + maskingFormat.getRightVisible();
-            return value.length() > visibleCharacterCount;
-        }
-        return false;
+        return MaskUtils.mask(value,
+                maskingFormat.getLeftVisible(),
+                maskingFormat.getRightVisible(),
+                TRUE.equals(maskingFormat.getIsMultiMask()),
+                maskingFormat.getSeparator());
     }
 }
