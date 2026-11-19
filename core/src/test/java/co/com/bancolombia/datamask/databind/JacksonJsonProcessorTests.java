@@ -226,7 +226,7 @@ class JacksonJsonProcessorTests {
         System.out.println(jsonValue);
 
         assertTrue(jsonValue.contains("\"_id\":\"************************\""));
-        assertTrue(jsonValue.contains("\"email\":\"**********@bluplanet.com\""));
+        assertTrue(jsonValue.contains("\"email\":\"*************@bluplanet.com\""));
         assertTrue(jsonValue.contains("\"name\":\"*********"));
         assertTrue(jsonValue.contains("\"guid\":\"masked_pair=14fe****************************5722" +
                 "|MTRmZTE2MWQtNjcwNC00OGEwLThiMDgtYjNhM2IyNmE1NzIy\""));

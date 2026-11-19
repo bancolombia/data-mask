@@ -46,21 +46,16 @@ public class MaskSerializerCommons {
 
     /**
      * Values that are not longer than the visible characters are masked entirely by {@link MaskUtils#mask}, so they
-     * are never written in clear text. They never reach {@link MaskUtils#maskAsEmail}, which does not handle them.
+     * are never written in clear text. For emails, this applies to the part before the {@code @}.
      */
     private String generateMaskedValue(String value) {
-        if (TRUE.equals(maskingFormat.getIsEmail()) && value.length() > visibleCharacterCount()) {
-            return MaskUtils.maskAsEmail(value,maskingFormat.getLeftVisible(), maskingFormat.getRightVisible());
-        } else {
-            return MaskUtils.mask(value,
-                    maskingFormat.getLeftVisible(),
-                    maskingFormat.getRightVisible(),
-                    TRUE.equals(maskingFormat.getIsMultiMask()),
-                    maskingFormat.getSeparator());
+        if (TRUE.equals(maskingFormat.getIsEmail())) {
+            return MaskUtils.maskAsEmail(value, maskingFormat.getLeftVisible(), maskingFormat.getRightVisible());
         }
-    }
-
-    private int visibleCharacterCount() {
-        return maskingFormat.getLeftVisible() + maskingFormat.getRightVisible();
+        return MaskUtils.mask(value,
+                maskingFormat.getLeftVisible(),
+                maskingFormat.getRightVisible(),
+                TRUE.equals(maskingFormat.getIsMultiMask()),
+                maskingFormat.getSeparator());
     }
 }

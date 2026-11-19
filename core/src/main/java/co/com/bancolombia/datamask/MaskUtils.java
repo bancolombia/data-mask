@@ -49,17 +49,17 @@ public final class MaskUtils {
         return maskAsEmail(fieldValue, 2, 2);
     }
 
+    /**
+     * Masks the part before the <b>last</b> {@code @} with {@link #mask(String, int, int)} and keeps the domain. The
+     * domain cannot contain {@code @}, but a quoted local part can. A value without {@code @} is masked as a whole
+     * with {@link #mask(String, int, int)}.
+     */
     public static String maskAsEmail(String fieldValue, int leftVisible, int rightVisible) {
-        String[] parts = fieldValue.split("@");
-
-        var leftCount = 2;
-        var rightCount = 1;
-
-        String leftPart = StringUtils.left(parts[0], leftVisible);
-        String rightPart = StringUtils.right(parts[0], rightVisible);
-        String maskedPart = StringUtils.repeat("*", parts[0].length() - (leftCount + rightCount));
-
-        return leftPart + maskedPart + rightPart + "@" + parts[1];
+        int at = StringUtils.lastIndexOf(fieldValue, '@');
+        if (at < 0) {
+            return mask(fieldValue, leftVisible, rightVisible);
+        }
+        return mask(fieldValue.substring(0, at), leftVisible, rightVisible) + fieldValue.substring(at);
     }
 
     private static int cleanIntParam(int input) {

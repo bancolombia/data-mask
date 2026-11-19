@@ -301,13 +301,13 @@ class JacksonAnnotationProcessorTests {
     void testValuesNotLongerThanVisibleCharactersAreMaskedEntirely() {
         JsonMapper mapper = new MaskingObjectMapper(new DummyCipher(), new DummyDecipher());
 
-        ShortValues original = new ShortValues("1234", "123", "12", "ab", "a@b", "ab");
+        ShortValues original = new ShortValues("1234", "123", "12", "ab", "ab@bank.com", "ab");
         String jsonValue = mapper.writeValueAsString(original);
 
         assertEquals(mapper.readTree("{\"pin\":\"****\","
                 + "\"code\":\"" + DataMaskingConstants.MASKING_PREFIX + "***|" + encode("123") + "\","
                 + "\"cvv\":{\"masked\":\"**\",\"enc\":\"" + encode("12") + "\"},"
-                + "\"alias\":\"**\",\"email\":\"***\",\"name\":\"**\"}"), mapper.readTree(jsonValue));
+                + "\"alias\":\"**\",\"email\":\"**@bank.com\",\"name\":\"**\"}"), mapper.readTree(jsonValue));
 
         ShortValues read = mapper.readValue(jsonValue, ShortValues.class);
         assertEquals("****", read.getPin());
