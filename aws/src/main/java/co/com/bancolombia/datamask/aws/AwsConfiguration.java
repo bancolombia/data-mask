@@ -13,11 +13,10 @@ import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.jce.JceMasterKey;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Profile;
 
 import javax.crypto.SecretKey;
@@ -25,40 +24,54 @@ import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
 
 /**
- * Registers the AWS Encryption SDK {@link DataCipher} and {@link DataDecipher}. It is loaded as a Spring Boot
- * auto-configuration when {@code secrets.dataMaskKey} is set, and can also be imported with
- * {@code @Import(AwsConfiguration.class)}. Beans of the same type defined by the application take precedence.
+ * Registers the AWS Encryption SDK {@link DataCipher} and {@link DataDecipher}. It is loaded by
+ * {@link AwsAutoConfiguration} when {@code secrets.dataMaskKey} is set, and can also be imported with
+ * {@code @Import(AwsConfiguration.class)}, which requires {@code secrets.dataMaskKey}.
+ * <p>
+ * Beans of the same type defined by the application take precedence only with auto-configuration:
+ * {@code @ConditionalOnMissingBean} sees only the beans processed so far, so with {@code @Import} both beans may be
+ * registered, and injecting them fails with {@code NoUniqueBeanDefinitionException}.
+ * <p>
+ * The Secrets Manager client, the key and the master key are internal: they are not injected by type into the
+ * application ({@code defaultCandidate = false}), and they are created only when the cipher beans need them
+ * ({@code @Lazy}).
  */
-@AutoConfiguration
-@ConditionalOnProperty("secrets.dataMaskKey")
+@Configuration
 public class AwsConfiguration {
 
     private static final String DEFAULT_ALGORITHM = "AES";
     private static final String WRAPPING_ALGORITHM = "AES/GCM/NoPadding";
 
     @Profile({"!local"})
-    @Bean(name = "secretManagerSyncConnectorForDataMasking")
+    @Lazy
+    @Bean(name = "secretManagerSyncConnectorForDataMasking", defaultCandidate = false)
     public GenericManager manager(@Value("${adapters.aws.secrets-manager.region}") String secretsRegion) {
         return new AWSSecretManagerConnector(secretsRegion);
     }
 
     @Profile({"local"})
-    @Bean(name = "secretManagerSyncConnectorForDataMasking")
+    @Lazy
+    @Bean(name = "secretManagerSyncConnectorForDataMasking", defaultCandidate = false)
     public GenericManager localManager(@Value("${adapters.aws.secrets-manager.region}") String secretsRegion,
                                        @Value("${adapters.aws.secrets-manager.endpoint}") String secretsEndpoint) {
         return new AWSSecretManagerConnector(secretsRegion, secretsEndpoint);
     }
 
-    @Bean
+    @Lazy
+    @Bean(defaultCandidate = false)
     public SecretKey retrieveEncryptionKey(
             @Qualifier("secretManagerSyncConnectorForDataMasking") GenericManager manager,
             @Value("${secrets.dataMaskKey}") String secretWithDataMaskKey) throws SecretException {
+        if (secretWithDataMaskKey.isBlank()) {
+            throw new IllegalStateException("secrets.dataMaskKey must not be blank");
+        }
         var encryptionKey = manager.getSecret(secretWithDataMaskKey).getBytes();
         return new SecretKeySpec(validateAndDeriveKey(encryptionKey), DEFAULT_ALGORITHM);
     }
 
-    @Bean
-    public JceMasterKey masterKeyProvider(SecretKey retrieveEncryptionKey,
+    @Lazy
+    @Bean(defaultCandidate = false)
+    public JceMasterKey masterKeyProvider(@Qualifier("retrieveEncryptionKey") SecretKey retrieveEncryptionKey,
                                   @Value("${dataMask.encryptionContext:default_context}") String encryptionContext,
                                   @Value("${dataMask.keyId:}") String keyId) {
         return JceMasterKey.getInstance(retrieveEncryptionKey,
@@ -77,16 +90,16 @@ public class AwsConfiguration {
     }
 
     @Bean
-    @Primary
     @ConditionalOnMissingBean
-    public DataCipher dataCipher(AwsCrypto awsCrypto, JceMasterKey masterKeyProvider) {
+    public DataCipher dataCipher(AwsCrypto awsCrypto,
+                                 @Qualifier("masterKeyProvider") JceMasterKey masterKeyProvider) {
         return new AWSEncryptionSdkCipher(awsCrypto, masterKeyProvider);
     }
 
     @Bean
-    @Primary
     @ConditionalOnMissingBean
-    public DataDecipher dataDecipher(AwsCrypto awsCrypto, JceMasterKey masterKeyProvider) {
+    public DataDecipher dataDecipher(AwsCrypto awsCrypto,
+                                     @Qualifier("masterKeyProvider") JceMasterKey masterKeyProvider) {
         return new AWSEncryptionSdkDecipher(awsCrypto, masterKeyProvider);
     }
 

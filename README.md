@@ -354,14 +354,27 @@ Passed via configuration `application.properties` or `application.yaml`
 
 ### Spring configuration
 
-`AwsConfiguration` is a Spring Boot auto-configuration: adding the dependency and setting `secrets.dataMaskKey`
-registers the `DataCipher` and `DataDecipher` beans. Without `secrets.dataMaskKey`, no bean is registered.
+`AwsAutoConfiguration` is a Spring Boot auto-configuration: adding the dependency and setting `secrets.dataMaskKey`
+registers the `DataCipher` and `DataDecipher` beans. Without `secrets.dataMaskKey`, no bean is registered. A blank
+`secrets.dataMaskKey` stops startup.
 
-- `DataCipher`, `DataDecipher` or `AwsCrypto` beans defined by the application take precedence over the ones of this
-  library.
-- To register the beans explicitly instead of relying on auto-configuration, import the configuration:
+- With auto-configuration, `DataCipher`, `DataDecipher` or `AwsCrypto` beans defined by the application take
+  precedence over the ones of this library.
+- The Secrets Manager client (`secretManagerSyncConnectorForDataMasking`), the `SecretKey` and the `JceMasterKey` of
+  this library are internal: they are not injected by type into the application, so they don't conflict with beans of
+  the same type, and they are created only when this library's ciphers need them.
+
+Auto-configuration is the recommended setup, so remove `@Import(AwsConfiguration.class)` if your application has it.
+Import it only when auto-configuration is not available, for example in a Spring application without Spring Boot, or
+when `AwsAutoConfiguration` is excluded. Importing it works with these differences:
+
+- `secrets.dataMaskKey` is required: startup fails when it is missing.
+- Application beans don't take precedence. If the application also defines a `DataCipher` or `DataDecipher`, both may
+  be registered, and injecting them fails with `NoUniqueBeanDefinitionException`.
 
 ```java
+// Not needed in a Spring Boot application: auto-configuration registers the same beans, and application beans only
+// take precedence without this import. Use it only when auto-configuration is not available.
 @Configuration
 @Import(AwsConfiguration.class)
 public class DataMaskConfig {
