@@ -356,13 +356,15 @@ Passed via configuration `application.properties` or `application.yaml`
 
 `AwsAutoConfiguration` is a Spring Boot auto-configuration: adding the dependency and setting `secrets.dataMaskKey`
 registers the `DataCipher` and `DataDecipher` beans. Without `secrets.dataMaskKey`, no bean is registered. A blank
-`secrets.dataMaskKey` stops startup.
+`secrets.dataMaskKey` stops startup. Applications whose base package is `co.com.bancolombia` also use
+auto-configuration: `AwsConfiguration` is kept out of component scanning.
 
-- With auto-configuration, `DataCipher`, `DataDecipher` or `AwsCrypto` beans defined by the application take
-  precedence over the ones of this library.
-- The Secrets Manager client (`secretManagerSyncConnectorForDataMasking`), the `SecretKey` and the `JceMasterKey` of
-  this library are internal: they are not injected by type into the application, so they don't conflict with beans of
-  the same type, and they are created only when this library's ciphers need them.
+- With auto-configuration, `DataCipher` and `DataDecipher` beans defined by the application take precedence over the
+  ones of this library. Define both: if the application defines only one of them, this library registers neither,
+  since an AWS bean paired with the application one could not read the values written by the other.
+- The Secrets Manager client (`secretManagerSyncConnectorForDataMasking`), the `SecretKey`, the `JceMasterKey` and the
+  `AwsCrypto` of this library are internal: they are not injected by type into the application, so they don't
+  conflict with beans of the same type, and they are created only when this library's ciphers need them.
 
 Auto-configuration is the recommended setup, so remove `@Import(AwsConfiguration.class)` if your application has it.
 Import it only when auto-configuration is not available, for example in a Spring application without Spring Boot, or
