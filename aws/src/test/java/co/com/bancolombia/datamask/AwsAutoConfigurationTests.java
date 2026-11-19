@@ -8,16 +8,21 @@ import co.com.bancolombia.datamask.cipher.NoOpCipher;
 import co.com.bancolombia.datamask.cipher.NoOpDecipher;
 import co.com.bancolombia.secretsmanager.api.GenericManager;
 import com.amazonaws.encryptionsdk.AwsCrypto;
+import com.amazonaws.encryptionsdk.CommitmentPolicy;
+import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.boot.LazyInitializationBeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.annotation.ImportCandidates;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 
 import javax.crypto.SecretKey;
@@ -54,7 +59,7 @@ class AwsAutoConfigurationTests {
     void shouldRegisterCipherBeansWhenDataMaskKeyIsSet() {
         contextRunner.withPropertyValues(DATA_MASK_KEY)
                 .run(context -> {
-                    assertThat(context).hasNotFailed().hasSingleBean(AwsCrypto.class);
+                    assertThat(context).hasNotFailed();
                     assertThat(context.getBeanNamesForType(DataCipher.class)).containsExactly("dataCipher");
                     assertThat(context.getBeanNamesForType(DataDecipher.class)).containsExactly("dataDecipher");
                 });
@@ -159,6 +164,50 @@ class AwsAutoConfigurationTests {
                 });
     }
 
+    @Test
+    void shouldKeepAwsConfigurationOutOfComponentScanning() {
+        // Applications whose base package is co.com.bancolombia scan AwsConfiguration's package.
+        contextRunner.withPropertyValues(DATA_MASK_KEY)
+                .withUserConfiguration(ScanningConfiguration.class, CustomCipherConfiguration.class)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.getBeanNamesForType(DataCipher.class)).containsExactly("customCipher");
+                    assertThat(context.getBeanNamesForType(DataDecipher.class)).containsExactly("customDecipher");
+                });
+        contextRunner.withUserConfiguration(ScanningConfiguration.class)
+                .run(context -> assertThat(context).hasNotFailed().doesNotHaveBean(DataCipher.class));
+    }
+
+    @Test
+    void shouldNotRegisterLibraryCiphersWhenTheApplicationDefinesOnlyOne() {
+        contextRunner.withPropertyValues(DATA_MASK_KEY)
+                .withUserConfiguration(OnlyCipherConfiguration.class)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.getBeanNamesForType(DataCipher.class)).containsExactly("customCipher");
+                    assertThat(context).doesNotHaveBean(DataDecipher.class);
+                });
+    }
+
+    @Test
+    void shouldKeepTheLibraryAwsCryptoNextToTheApplicationOne() {
+        new ApplicationContextRunner()
+                .withAllowBeanDefinitionOverriding(true)
+                .withConfiguration(AutoConfigurations.of(PropertyPlaceholderAutoConfiguration.class))
+                .withPropertyValues(REGION, DATA_MASK_KEY)
+                .withUserConfiguration(ImportingWithFakeManagerConfiguration.class,
+                        ApplicationAwsCryptoConfiguration.class)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    AwsCrypto libraryCrypto = context.getBean("awsCrypto", AwsCrypto.class);
+                    assertThat(libraryCrypto.getEncryptionAlgorithm())
+                            .isEqualTo(CryptoAlgorithm.ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA256);
+                    assertThat(context.getBean(AwsCrypto.class)).isSameAs(context.getBean("applicationCrypto"));
+                    assertThat(context.getBean(DataCipher.class)).extracting("awsCrypto").isSameAs(libraryCrypto);
+                    assertThat(context.getBean(DataDecipher.class)).extracting("awsCrypto").isSameAs(libraryCrypto);
+                });
+    }
+
     @Configuration(proxyBeanMethods = false)
     static class CustomCipherConfiguration {
         @Bean
@@ -169,6 +218,28 @@ class AwsAutoConfigurationTests {
         @Bean
         DataDecipher customDecipher() {
             return new NoOpDecipher();
+        }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ComponentScan(basePackages = "co.com.bancolombia.datamask.aws", excludeFilters =
+            @ComponentScan.Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class))
+    static class ScanningConfiguration {
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    static class OnlyCipherConfiguration {
+        @Bean
+        DataCipher customCipher() {
+            return new NoOpCipher();
+        }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    static class ApplicationAwsCryptoConfiguration {
+        @Bean
+        AwsCrypto applicationCrypto() {
+            return AwsCrypto.builder().withCommitmentPolicy(CommitmentPolicy.RequireEncryptRequireDecrypt).build();
         }
     }
 

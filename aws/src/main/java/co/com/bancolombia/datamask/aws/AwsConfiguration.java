@@ -13,9 +13,10 @@ import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.jce.JceMasterKey;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Profile;
 
@@ -28,15 +29,20 @@ import java.util.Arrays;
  * {@link AwsAutoConfiguration} when {@code secrets.dataMaskKey} is set, and can also be imported with
  * {@code @Import(AwsConfiguration.class)}, which requires {@code secrets.dataMaskKey}.
  * <p>
- * Beans of the same type defined by the application take precedence only with auto-configuration:
- * {@code @ConditionalOnMissingBean} sees only the beans processed so far, so with {@code @Import} both beans may be
- * registered, and injecting them fails with {@code NoUniqueBeanDefinitionException}.
+ * It is annotated with {@link AutoConfiguration}, but not listed in {@code AutoConfiguration.imports}, only to keep it
+ * out of component scanning: applications that scan {@code co.com.bancolombia} get it through
+ * {@link AwsAutoConfiguration}.
  * <p>
- * The Secrets Manager client, the key and the master key are internal: they are not injected by type into the
- * application ({@code defaultCandidate = false}), and they are created only when the cipher beans need them
- * ({@code @Lazy}).
+ * A {@link DataCipher} or {@link DataDecipher} defined by the application takes precedence only with
+ * auto-configuration: {@code @ConditionalOnMissingBean} sees only the beans processed so far, so with {@code @Import}
+ * both beans may be registered, and injecting them fails with {@code NoUniqueBeanDefinitionException}.
+ * <p>
+ * The Secrets Manager client, the key, the master key and the {@link AwsCrypto} are internal: they are not injected by
+ * type into the application ({@code defaultCandidate = false}), and they are created only when the cipher beans need
+ * them ({@code @Lazy}).
  */
-@Configuration
+@AutoConfiguration
+@Import(AwsConfiguration.CipherConfiguration.class)
 public class AwsConfiguration {
 
     private static final String DEFAULT_ALGORITHM = "AES";
@@ -80,27 +86,13 @@ public class AwsConfiguration {
                 WRAPPING_ALGORITHM);
     }
 
-    @Bean
-    @ConditionalOnMissingBean
+    @Lazy
+    @Bean(defaultCandidate = false)
     public AwsCrypto awsCrypto() {
         return AwsCrypto.builder()
                 .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
                 .withEncryptionAlgorithm(CryptoAlgorithm.ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA256)
                 .build();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public DataCipher dataCipher(AwsCrypto awsCrypto,
-                                 @Qualifier("masterKeyProvider") JceMasterKey masterKeyProvider) {
-        return new AWSEncryptionSdkCipher(awsCrypto, masterKeyProvider);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public DataDecipher dataDecipher(AwsCrypto awsCrypto,
-                                     @Qualifier("masterKeyProvider") JceMasterKey masterKeyProvider) {
-        return new AWSEncryptionSdkDecipher(awsCrypto, masterKeyProvider);
     }
 
     private byte[] validateAndDeriveKey(byte[] key) throws SecretException{
@@ -113,6 +105,27 @@ public class AwsConfiguration {
             throw new SecretException("Encryption key for data-masking should be at least 16 bytes. Other lengths supported " +
                     "for AES encryption are 24 and 32 bytes. Any given key greater than 16 bytes, and not multiple of 16, " +
                     "will be derived from first 16 bytes.");
+        }
+    }
+
+    /**
+     * Registers the cipher and the decipher together, or neither: if the application defines one of them, an AWS bean
+     * paired with it could not read the values written by the other. It is not annotated with
+     * {@code @Configuration}, so component scanning does not pick it up.
+     */
+    @ConditionalOnMissingBean({DataCipher.class, DataDecipher.class})
+    static class CipherConfiguration {
+
+        @Bean
+        public DataCipher dataCipher(@Qualifier("awsCrypto") AwsCrypto awsCrypto,
+                                     @Qualifier("masterKeyProvider") JceMasterKey masterKeyProvider) {
+            return new AWSEncryptionSdkCipher(awsCrypto, masterKeyProvider);
+        }
+
+        @Bean
+        public DataDecipher dataDecipher(@Qualifier("awsCrypto") AwsCrypto awsCrypto,
+                                         @Qualifier("masterKeyProvider") JceMasterKey masterKeyProvider) {
+            return new AWSEncryptionSdkDecipher(awsCrypto, masterKeyProvider);
         }
     }
 }
