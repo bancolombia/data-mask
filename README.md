@@ -355,11 +355,12 @@ Passed via configuration `application.properties` or `application.yaml`
 ### Spring configuration
 
 `AwsAutoConfiguration` is a Spring Boot auto-configuration: adding the dependency and setting `secrets.dataMaskKey`
-registers the `DataCipher` and `DataDecipher` beans. Without `secrets.dataMaskKey`, no bean is registered. A blank
+registers the `DataCipher` and `DataDecipher` beans. Any value of `secrets.dataMaskKey`, `false` included, enables
+them. Without `secrets.dataMaskKey`, no bean is registered. A blank
 `secrets.dataMaskKey` stops startup when this library's ciphers are created, which is at startup unless
 `spring.main.lazy-initialization` is `true` or the application defines its own ciphers. Applications whose base package
-is `co.com.bancolombia` also use auto-configuration: `AwsConfiguration` has no stereotype annotation, so component
-scanning never picks it up.
+is `co.com.bancolombia` also use auto-configuration: neither `AwsAutoConfiguration` nor `AwsConfiguration` has a
+stereotype annotation, so component scanning never picks them up, even without the exclude filter of Spring Boot.
 
 - With auto-configuration, `DataCipher` and `DataDecipher` beans defined by the application take precedence over the
   ones of this library. Define both: if the application defines only one of them, this library registers neither,
@@ -368,14 +369,17 @@ scanning never picks it up.
   `AwsCrypto` of this library are internal: they are not injected by type into the application, so they don't
   conflict with beans of the same type, and they are created only when this library's ciphers need them. Their bean
   names (`dataMaskEncryptionKey`, `dataMaskMasterKey` and `dataMaskAwsCrypto`) don't clash with application beans.
+  To inject one of them, name it with `@Qualifier`, for example `@Qualifier("dataMaskAwsCrypto") AwsCrypto awsCrypto`.
 
 Auto-configuration is the recommended setup, so remove `@Import(AwsConfiguration.class)` if your application has it.
 Import it only when auto-configuration is not available, for example in a Spring application without Spring Boot, or
 when `AwsAutoConfiguration` is excluded. Importing it works with these differences:
 
 - `secrets.dataMaskKey` is required: startup fails when it is missing.
-- Application beans don't take precedence. If the application also defines a `DataCipher` or `DataDecipher`, both may
-  be registered, and injecting them fails with `NoUniqueBeanDefinitionException`.
+- Application beans don't take precedence reliably: whether this library sees them depends on the order in which the
+  configuration classes are processed. If the application also defines a `DataCipher` or `DataDecipher`, both may be
+  registered, and injecting them fails with `NoUniqueBeanDefinitionException`, or this library may register neither of
+  its ciphers, and the application ones are used.
 
 ```java
 // Not needed in a Spring Boot application: auto-configuration registers the same beans, and application beans only
