@@ -31,14 +31,15 @@ import java.util.Arrays;
  * It has no stereotype annotation, such as {@code @Configuration}, so component scanning never picks it up:
  * applications that scan {@code co.com.bancolombia} get it through {@link AwsAutoConfiguration}.
  * <p>
- * A {@link DataCipher} or {@link DataDecipher} defined by the application takes precedence only with
- * auto-configuration: {@code @ConditionalOnMissingBean} sees only the beans processed so far, so with {@code @Import}
- * both beans may be registered, and injecting them fails with {@code NoUniqueBeanDefinitionException}.
+ * A {@link DataCipher} or {@link DataDecipher} defined by the application takes precedence over the ones of this
+ * library, which are not {@code @Primary}. It does so reliably only with auto-configuration:
+ * {@code @ConditionalOnMissingBean} sees only the beans processed so far, so with {@code @Import} both beans may be
+ * registered, and injecting them fails with {@code NoUniqueBeanDefinitionException}.
  * <p>
  * The Secrets Manager client, the key, the master key and the {@link AwsCrypto} are internal: they are not injected by
- * type into the application ({@code defaultCandidate = false}), and they are created only when the cipher beans need
- * them ({@code @Lazy}). Their bean names start with {@code dataMask}, or {@code secretManagerSyncConnectorForDataMasking}
- * for the client, so they don't clash with application beans.
+ * type into the application ({@code defaultCandidate = false}), only with a {@code @Qualifier} that names them, and they
+ * are created only when the cipher beans need them ({@code @Lazy}). Their bean names start with {@code dataMask}, or
+ * {@code secretManagerSyncConnectorForDataMasking} for the client, so they don't clash with application beans.
  */
 @Lazy
 @Import(AwsConfiguration.CipherConfiguration.class)

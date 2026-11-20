@@ -12,6 +12,7 @@ import com.amazonaws.encryptionsdk.CommitmentPolicy;
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.LazyInitializationBeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
@@ -180,6 +181,39 @@ class AwsAutoConfigurationTests {
     }
 
     @Test
+    void shouldKeepAwsAutoConfigurationOutOfComponentScanningWithoutTheExcludeFilter() {
+        // Scanned as an application configuration, it would register the AWS ciphers before the application ones.
+        contextRunner.withPropertyValues(DATA_MASK_KEY)
+                .withUserConfiguration(PlainScanningConfiguration.class, CustomCipherConfiguration.class)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.getBeanNamesForType(DataCipher.class)).containsExactly("customCipher");
+                    assertThat(context.getBeanNamesForType(DataDecipher.class)).containsExactly("customDecipher");
+                });
+    }
+
+    @Test
+    void shouldRegisterCipherBeansWhenDataMaskKeyIsFalse() {
+        contextRunner.withPropertyValues("secrets.dataMaskKey=false")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.getBeanNamesForType(DataCipher.class)).containsExactly("dataCipher");
+                    assertThat(context.getBeanNamesForType(DataDecipher.class)).containsExactly("dataDecipher");
+                });
+    }
+
+    @Test
+    void shouldInjectInternalBeansWithAQualifier() {
+        contextRunner.withPropertyValues(DATA_MASK_KEY)
+                .withUserConfiguration(QualifiedAwsCryptoConfiguration.class)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.getBean(QualifiedAwsCryptoConsumer.class).awsCrypto())
+                            .isSameAs(context.getBean("dataMaskAwsCrypto"));
+                });
+    }
+
+    @Test
     void shouldNotClashWithAnApplicationBeanNamedAwsCrypto() {
         contextRunner.withPropertyValues(DATA_MASK_KEY)
                 .withUserConfiguration(ApplicationAwsCryptoConfiguration.class)
@@ -265,6 +299,17 @@ class AwsAutoConfigurationTests {
     }
 
     record ApplicationBeansConsumer(GenericManager manager, SecretKey secretKey) {
+    }
+
+    record QualifiedAwsCryptoConsumer(AwsCrypto awsCrypto) {
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    static class QualifiedAwsCryptoConfiguration {
+        @Bean
+        QualifiedAwsCryptoConsumer qualifiedAwsCryptoConsumer(@Qualifier("dataMaskAwsCrypto") AwsCrypto awsCrypto) {
+            return new QualifiedAwsCryptoConsumer(awsCrypto);
+        }
     }
 
     @Configuration(proxyBeanMethods = false)
