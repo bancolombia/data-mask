@@ -3,7 +3,9 @@ package co.com.bancolombia.datamask.aws;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.jspecify.annotations.NonNull;
-import org.springframework.context.annotation.Condition;
+import org.springframework.boot.autoconfigure.condition.ConditionMessage;
+import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
+import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Import;
@@ -30,13 +32,17 @@ public class AwsAutoConfiguration {
 
     /**
      * Matches when {@code secrets.dataMaskKey} is present, whatever its value: unlike {@code @ConditionalOnProperty},
-     * it doesn't skip the value {@code false}, and a blank value reaches the check of {@link AwsConfiguration}.
+     * it doesn't skip the value {@code false}, and a blank value reaches the check of {@link AwsConfiguration}. As a
+     * {@link SpringBootCondition}, its outcome is in the condition evaluation report, so a missing key shows up there.
      */
-    static class DataMaskKeyCondition implements Condition {
+    static class DataMaskKeyCondition extends SpringBootCondition {
 
         @Override
-        public boolean matches(ConditionContext context, @NonNull AnnotatedTypeMetadata metadata) {
-            return context.getEnvironment().containsProperty(DATA_MASK_KEY);
+        public ConditionOutcome getMatchOutcome(ConditionContext context, @NonNull AnnotatedTypeMetadata metadata) {
+            var message = ConditionMessage.forCondition("data-mask-aws key");
+            return context.getEnvironment().containsProperty(DATA_MASK_KEY)
+                    ? ConditionOutcome.match(message.found("property").items(DATA_MASK_KEY))
+                    : ConditionOutcome.noMatch(message.didNotFind("property").items(DATA_MASK_KEY));
         }
     }
 }

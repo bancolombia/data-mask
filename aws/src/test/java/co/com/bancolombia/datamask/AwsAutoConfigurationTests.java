@@ -17,6 +17,7 @@ import org.springframework.boot.LazyInitializationBeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.condition.ConditionEvaluationReport;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.annotation.ImportCandidates;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -73,6 +74,17 @@ class AwsAutoConfigurationTests {
                 .doesNotHaveBean(AwsConfiguration.class)
                 .doesNotHaveBean(DataCipher.class)
                 .doesNotHaveBean(DataDecipher.class));
+    }
+
+    @Test
+    void shouldReportTheMissingDataMaskKeyInTheConditionEvaluationReport() {
+        contextRunner.run(context -> assertThat(ConditionEvaluationReport.get(context.getBeanFactory())
+                .getConditionAndOutcomesBySource().get(AwsAutoConfiguration.class.getName()))
+                .singleElement()
+                .satisfies(conditionAndOutcome -> {
+                    assertThat(conditionAndOutcome.getOutcome().isMatch()).isFalse();
+                    assertThat(conditionAndOutcome.getOutcome().getMessage()).contains("secrets.dataMaskKey");
+                }));
     }
 
     @Test
