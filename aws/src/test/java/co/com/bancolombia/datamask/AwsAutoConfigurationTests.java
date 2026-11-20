@@ -86,7 +86,7 @@ class AwsAutoConfigurationTests {
                     assertThat(context).hasNotFailed();
                     assertThat(context.getBeanNamesForType(DataCipher.class)).containsExactly("customCipher");
                     assertThat(context.getBeanNamesForType(DataDecipher.class)).containsExactly("customDecipher");
-                    assertThat(context.getBeanFactory().containsSingleton("retrieveEncryptionKey")).isFalse();
+                    assertThat(context.getBeanFactory().containsSingleton("dataMaskEncryptionKey")).isFalse();
                     assertThat(context.getBeanFactory()
                             .containsSingleton("secretManagerSyncConnectorForDataMasking")).isFalse();
                 });
@@ -174,8 +174,19 @@ class AwsAutoConfigurationTests {
                     assertThat(context.getBeanNamesForType(DataCipher.class)).containsExactly("customCipher");
                     assertThat(context.getBeanNamesForType(DataDecipher.class)).containsExactly("customDecipher");
                 });
-        contextRunner.withUserConfiguration(ScanningConfiguration.class)
+        // Also without the exclude filter of Spring Boot: AwsConfiguration has no stereotype annotation.
+        contextRunner.withUserConfiguration(PlainScanningConfiguration.class)
                 .run(context -> assertThat(context).hasNotFailed().doesNotHaveBean(DataCipher.class));
+    }
+
+    @Test
+    void shouldNotClashWithAnApplicationBeanNamedAwsCrypto() {
+        contextRunner.withPropertyValues(DATA_MASK_KEY)
+                .withUserConfiguration(ApplicationAwsCryptoConfiguration.class)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.getBean(AwsCrypto.class)).isSameAs(context.getBean("awsCrypto"));
+                });
     }
 
     @Test
@@ -199,10 +210,10 @@ class AwsAutoConfigurationTests {
                         ApplicationAwsCryptoConfiguration.class)
                 .run(context -> {
                     assertThat(context).hasNotFailed();
-                    AwsCrypto libraryCrypto = context.getBean("awsCrypto", AwsCrypto.class);
+                    AwsCrypto libraryCrypto = context.getBean("dataMaskAwsCrypto", AwsCrypto.class);
                     assertThat(libraryCrypto.getEncryptionAlgorithm())
                             .isEqualTo(CryptoAlgorithm.ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA256);
-                    assertThat(context.getBean(AwsCrypto.class)).isSameAs(context.getBean("applicationCrypto"));
+                    assertThat(context.getBean(AwsCrypto.class)).isSameAs(context.getBean("awsCrypto"));
                     assertThat(context.getBean(DataCipher.class)).extracting("awsCrypto").isSameAs(libraryCrypto);
                     assertThat(context.getBean(DataDecipher.class)).extracting("awsCrypto").isSameAs(libraryCrypto);
                 });
@@ -228,6 +239,11 @@ class AwsAutoConfigurationTests {
     }
 
     @Configuration(proxyBeanMethods = false)
+    @ComponentScan(basePackages = "co.com.bancolombia.datamask.aws")
+    static class PlainScanningConfiguration {
+    }
+
+    @Configuration(proxyBeanMethods = false)
     static class OnlyCipherConfiguration {
         @Bean
         DataCipher customCipher() {
@@ -238,7 +254,7 @@ class AwsAutoConfigurationTests {
     @Configuration(proxyBeanMethods = false)
     static class ApplicationAwsCryptoConfiguration {
         @Bean
-        AwsCrypto applicationCrypto() {
+        AwsCrypto awsCrypto() {
             return AwsCrypto.builder().withCommitmentPolicy(CommitmentPolicy.RequireEncryptRequireDecrypt).build();
         }
     }
