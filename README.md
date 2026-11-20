@@ -376,10 +376,13 @@ Import it only when auto-configuration is not available, for example in a Spring
 when `AwsAutoConfiguration` is excluded. Importing it works with these differences:
 
 - `secrets.dataMaskKey` is required: startup fails when it is missing.
-- Application beans don't take precedence reliably: whether this library sees them depends on the order in which the
-  configuration classes are processed. If the application also defines a `DataCipher` or `DataDecipher`, both may be
-  registered, and injecting them fails with `NoUniqueBeanDefinitionException`, or this library may register neither of
-  its ciphers, and the application ones are used.
+- Application beans don't take precedence reliably. If the application also defines a `DataCipher` or `DataDecipher`:
+  - In a Spring Boot application, it depends on the order in which the configuration classes are processed: both may be
+    registered, and injecting them fails with `NoUniqueBeanDefinitionException`, or this library may register neither
+    of its ciphers, and the application ones are used.
+  - Without Spring Boot, `@ConditionalOnMissingBean` is not on the classpath and is ignored, so this library always
+    registers its ciphers, and injecting them fails with `NoUniqueBeanDefinitionException`. Define them in the
+    application, or import `AwsConfiguration`, not both.
 
 ```java
 // Not needed in a Spring Boot application: auto-configuration registers the same beans, and application beans only
