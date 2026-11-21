@@ -38,7 +38,8 @@ public class AwsAutoConfiguration {
     static class DataMaskKeyCondition extends SpringBootCondition {
 
         @Override
-        public ConditionOutcome getMatchOutcome(ConditionContext context, @NonNull AnnotatedTypeMetadata metadata) {
+        public @NonNull ConditionOutcome getMatchOutcome(ConditionContext context,
+                                                         @NonNull AnnotatedTypeMetadata metadata) {
             var message = ConditionMessage.forCondition("data-mask-aws key");
             return context.getEnvironment().containsProperty(DATA_MASK_KEY)
                     ? ConditionOutcome.match(message.found("property").items(DATA_MASK_KEY))
