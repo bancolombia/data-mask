@@ -16,5 +16,9 @@ dependencies {
     implementation 'software.amazon.awssdk:secretsmanager:2.57.12'
     implementation 'software.amazon.awssdk:regions:2.57.12'
     implementation 'org.springframework:spring-context'
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
     testImplementation 'org.springframework:spring-test'
+    testImplementation 'org.springframework.boot:spring-boot-autoconfigure'
+    testImplementation 'org.springframework.boot:spring-boot-test'
+    testImplementation 'org.assertj:assertj-core'
 }

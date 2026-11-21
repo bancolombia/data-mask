@@ -3,8 +3,6 @@ package co.com.bancolombia.datamask;
 import co.com.bancolombia.datamask.aws.AwsConfiguration;
 import co.com.bancolombia.secretsmanager.api.GenericManager;
 import co.com.bancolombia.secretsmanager.api.exceptions.SecretException;
-import com.amazonaws.encryptionsdk.AwsCrypto;
-import com.amazonaws.encryptionsdk.jce.JceMasterKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,12 +29,6 @@ class AwsConfigurationTests {
     @Mock
     GenericManager genericManager;
 
-    @Mock
-    AwsCrypto awsCrypto;
-
-    @Mock
-    JceMasterKey masterKeyProvider;
-
     @BeforeEach
     void prepare() {
         classUnderTest = new AwsConfiguration();
@@ -58,15 +50,6 @@ class AwsConfigurationTests {
         assertNotNull(classUnderTest.awsCrypto());
     }
 
-    @Test
-    void testInstanceOfDataCipher() {
-        assertNotNull(classUnderTest.dataCipher(awsCrypto, masterKeyProvider));
-    }
-
-    @Test
-    void testInstanceOfDataDecipher() {
-        assertNotNull(classUnderTest.dataDecipher(awsCrypto, masterKeyProvider));
-    }
 
     @ParameterizedTest
     @CsvSource({
