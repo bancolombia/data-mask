@@ -3,12 +3,14 @@ package co.com.bancolombia.datamask.aws;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.jspecify.annotations.NonNull;
+import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.condition.ConditionMessage;
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.Ordered;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
@@ -22,7 +24,11 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * stereotype annotation, not even {@code @AutoConfiguration}, which is a {@code @Configuration}: otherwise an
  * application that scans {@code co.com.bancolombia} without the exclude filter of Spring Boot would process it as one
  * of its own configurations, before the application beans that {@code @ConditionalOnMissingBean} must see.
+ * <p>
+ * It runs last among auto-configurations, so that the ciphers of other auto-configurations are seen as they are when
+ * {@link AwsConfiguration} is imported by the application.
  */
+@AutoConfigureOrder(Ordered.LOWEST_PRECEDENCE)
 @Conditional(AwsAutoConfiguration.DataMaskKeyCondition.class)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Import(AwsConfiguration.class)

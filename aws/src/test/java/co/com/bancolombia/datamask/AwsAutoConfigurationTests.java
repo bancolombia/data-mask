@@ -11,28 +11,31 @@ import com.amazonaws.encryptionsdk.AwsCrypto;
 import com.amazonaws.encryptionsdk.CommitmentPolicy;
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.LazyInitializationBeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
+import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionEvaluationReport;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.annotation.ImportCandidates;
+import org.springframework.boot.test.context.assertj.AssertableApplicationContext;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.Ordered;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Unless a test says otherwise, beans are initialized lazily, so the context starts without calling AWS Secrets
@@ -42,6 +45,11 @@ class AwsAutoConfigurationTests {
 
     private static final String REGION = "adapters.aws.secrets-manager.region=us-east-1";
     private static final String DATA_MASK_KEY = "secrets.dataMaskKey=data-mask-key";
+
+    private final ApplicationContextRunner lazyRunner = new ApplicationContextRunner()
+            .withInitializer(context -> context.addBeanFactoryPostProcessor(
+                    new LazyInitializationBeanFactoryPostProcessor()))
+            .withPropertyValues(REGION);
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(
@@ -138,17 +146,71 @@ class AwsAutoConfigurationTests {
     }
 
     @Test
-    void shouldNotPreferTheLibraryCipherWhenImportedBeforeTheApplicationCipher() {
-        // With @Import, @ConditionalOnMissingBean does not see beans of classes processed later, so both beans are
-        // registered. Injecting them by type must fail instead of silently using the AWS cipher.
+    void shouldPreferTheApplicationCipherWhenImportedBeforeIt() {
         contextRunner.withPropertyValues(DATA_MASK_KEY)
                 .withUserConfiguration(ImportingConfiguration.class, CustomCipherConfiguration.class)
+                .run(AwsAutoConfigurationTests::assertOnlyCustomCiphers);
+    }
+
+    @Test
+    void shouldPreferTheApplicationCipherWhenImportedAfterIt() {
+        contextRunner.withPropertyValues(DATA_MASK_KEY)
+                .withUserConfiguration(CustomCipherConfiguration.class, ImportingConfiguration.class)
+                .run(AwsAutoConfigurationTests::assertOnlyCustomCiphers);
+    }
+
+    @Test
+    void shouldPreferTheApplicationCipherWhenImportedNextToIt() {
+        contextRunner.withPropertyValues(DATA_MASK_KEY)
+                .withUserConfiguration(ImportingNextToCustomCipherConfiguration.class)
+                .run(AwsAutoConfigurationTests::assertOnlyCustomCiphers);
+    }
+
+    @Test
+    void shouldPreferTheApplicationCipherWithoutAutoConfiguration() {
+        new ApplicationContextRunner()
+                .withInitializer(context -> context.addBeanFactoryPostProcessor(
+                        new LazyInitializationBeanFactoryPostProcessor()))
+                .withPropertyValues(REGION, DATA_MASK_KEY)
+                .withUserConfiguration(ImportingNextToCustomCipherConfiguration.class)
+                .run(AwsAutoConfigurationTests::assertOnlyCustomCiphers);
+    }
+
+    @Test
+    void shouldYieldToTheCiphersOfALaterAutoConfiguration() {
+        // @ImportAutoConfiguration goes through a DeferredImportSelector, like @EnableAutoConfiguration, unlike
+        // ApplicationContextRunner#withConfiguration, which registers auto-configurations as root classes.
+        lazyRunner.withPropertyValues(DATA_MASK_KEY)
+                .withUserConfiguration(AutoConfiguredWithLaterCipherConfiguration.class)
                 .run(context -> {
-                    assertThat(context.getBeanNamesForType(DataCipher.class))
-                            .containsExactlyInAnyOrder("dataCipher", "customCipher");
-                    assertThatThrownBy(() -> context.getBean(DataCipher.class))
-                            .isInstanceOf(NoUniqueBeanDefinitionException.class);
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.getBeanNamesForType(DataCipher.class)).containsExactly("otherCipher");
+                    assertThat(context.getBeanNamesForType(DataDecipher.class)).containsExactly("otherDecipher");
                 });
+    }
+
+    @Test
+    void shouldYieldToTheCiphersOfAnAutoConfigurationWhenImported() {
+        lazyRunner.withPropertyValues(DATA_MASK_KEY)
+                .withUserConfiguration(ImportingNextToAutoConfiguredCipherConfiguration.class)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.getBeanNamesForType(DataCipher.class)).containsExactly("otherCipher");
+                    assertThat(context.getBeanNamesForType(DataDecipher.class)).containsExactly("otherDecipher");
+                });
+    }
+
+    @Test
+    void shouldRegisterCipherBeansWithRealAutoConfiguration() {
+        lazyRunner.withPropertyValues(DATA_MASK_KEY)
+                .withUserConfiguration(CustomCipherConfiguration.class, AutoConfiguredConfiguration.class)
+                .run(AwsAutoConfigurationTests::assertOnlyCustomCiphers);
+    }
+
+    private static void assertOnlyCustomCiphers(AssertableApplicationContext context) {
+        assertThat(context).hasNotFailed();
+        assertThat(context.getBeanNamesForType(DataCipher.class)).containsExactly("customCipher");
+        assertThat(context.getBeanNamesForType(DataDecipher.class)).containsExactly("customDecipher");
     }
 
     @Test
@@ -308,6 +370,49 @@ class AwsAutoConfigurationTests {
     @Configuration(proxyBeanMethods = false)
     @Import(AwsConfiguration.class)
     static class ImportingConfiguration {
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @Import({AwsConfiguration.class, CustomCipherConfiguration.class})
+    static class ImportingNextToCustomCipherConfiguration {
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ImportAutoConfiguration({PropertyPlaceholderAutoConfiguration.class, AwsAutoConfiguration.class})
+    static class AutoConfiguredConfiguration {
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ImportAutoConfiguration({PropertyPlaceholderAutoConfiguration.class, AwsAutoConfiguration.class,
+            LateCipherAutoConfiguration.class})
+    static class AutoConfiguredWithLaterCipherConfiguration {
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @Import(AwsConfiguration.class)
+    @ImportAutoConfiguration({PropertyPlaceholderAutoConfiguration.class, OtherCipherAutoConfiguration.class})
+    static class ImportingNextToAutoConfiguredCipherConfiguration {
+    }
+
+    /**
+     * Another auto-configuration with ciphers, ordered after the default order of auto-configurations.
+     */
+    @AutoConfigureOrder(Ordered.LOWEST_PRECEDENCE - 10)
+    @ConditionalOnMissingBean({DataCipher.class, DataDecipher.class})
+    static class LateCipherAutoConfiguration extends OtherCipherAutoConfiguration {
+    }
+
+    @ConditionalOnMissingBean({DataCipher.class, DataDecipher.class})
+    static class OtherCipherAutoConfiguration {
+        @Bean
+        DataCipher otherCipher() {
+            return new NoOpCipher();
+        }
+
+        @Bean
+        DataDecipher otherDecipher() {
+            return new NoOpDecipher();
+        }
     }
 
     record ApplicationBeansConsumer(GenericManager manager, SecretKey secretKey) {
