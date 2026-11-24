@@ -15,9 +15,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.DeferredImportSelector;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.type.AnnotationMetadata;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -32,9 +34,9 @@ import java.util.Arrays;
  * applications that scan {@code co.com.bancolombia} get it through {@link AwsAutoConfiguration}.
  * <p>
  * A {@link DataCipher} or {@link DataDecipher} defined by the application takes precedence over the ones of this
- * library, which are not {@code @Primary}. It does so reliably only with auto-configuration:
- * {@code @ConditionalOnMissingBean} sees only the beans processed so far, so with {@code @Import} both beans may be
- * registered, and injecting them fails with {@code NoUniqueBeanDefinitionException}.
+ * library, which are not {@code @Primary}, wherever the application declares them: the ciphers are imported with a
+ * {@link DeferredImportSelector}, so {@code @ConditionalOnMissingBean} is evaluated after all the configuration
+ * classes of the application, with {@code @Import} as with auto-configuration.
  * <p>
  * The Secrets Manager client, the key, the master key and the {@link AwsCrypto} are internal: they are not injected by
  * type into the application ({@code defaultCandidate = false}), only with a {@code @Qualifier} that names them, and they
@@ -42,7 +44,7 @@ import java.util.Arrays;
  * {@code secretManagerSyncConnectorForDataMasking} for the client, so they don't clash with application beans.
  */
 @Lazy
-@Import(AwsConfiguration.CipherConfiguration.class)
+@Import(AwsConfiguration.CipherImportSelector.class)
 public class AwsConfiguration {
 
     private static final String DEFAULT_ALGORITHM = "AES";
@@ -104,6 +106,19 @@ public class AwsConfiguration {
             throw new SecretException("Encryption key for data-masking should be at least 16 bytes. Other lengths supported " +
                     "for AES encryption are 24 and 32 bytes. Any given key greater than 16 bytes, and not multiple of 16, " +
                     "will be derived from first 16 bytes.");
+        }
+    }
+
+    /**
+     * Imports {@link CipherConfiguration} after the configuration classes of the application, and after
+     * auto-configuration when {@link AwsConfiguration} is imported by the application, so that
+     * {@code @ConditionalOnMissingBean} sees their ciphers whatever the order in which they are processed.
+     */
+    static class CipherImportSelector implements DeferredImportSelector {
+
+        @Override
+        public String[] selectImports(AnnotationMetadata importingClassMetadata) {
+            return new String[] {CipherConfiguration.class.getName()};
         }
     }
 
