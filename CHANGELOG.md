@@ -1,13 +1,46 @@
 # Changelog
 
+## [v2.2.0](https://github.com/bancolombia/data-mask/tree/v2.2.0) (2026-11-26)
+
+[Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.1.0...v2.2.0)
+
+**Implemented enhancements:**
+
+- Performance: JsonSerializer/JsonDeserializer create a new JsonMapper on every serialize\(\) call [\#97](https://github.com/bancolombia/data-mask/issues/97)
+
+**Fixed bugs:**
+
+- data-mask-aws: auto-configuration is not loaded on Spring Boot 3 and 4 [\#108](https://github.com/bancolombia/data-mask/issues/108)
+- Inline format can't be unmasked when the masked value contains '|' [\#106](https://github.com/bancolombia/data-mask/issues/106)
+- Values shorter than leftVisible + rightVisible are serialized in clear text [\#105](https://github.com/bancolombia/data-mask/issues/105)
+- MaskUtils multi-mask: separator is used as a regex \(breaks with . | +, multi-char and null separators\) [\#95](https://github.com/bancolombia/data-mask/issues/95)
+
+**Closed issues:**
+
+- MaskUtils.maskAsEmail ignores leftVisible/rightVisible when counting masked characters and fails on short or non-email values [\#102](https://github.com/bancolombia/data-mask/issues/102)
+
+**Merged pull requests:**
+
+- docs: add the code of conduct and update the maintainers contact email [\#115](https://github.com/bancolombia/data-mask/pull/115) ([luisgomez29](https://github.com/luisgomez29))
+- chore\(deps\): bump ossf/scorecard-action from 2.5.0 to 2.6.0 [\#114](https://github.com/bancolombia/data-mask/pull/114) ([dependabot[bot]](https://github.com/apps/dependabot))
+- chore\(aws\): register AwsConfiguration as a Spring Boot auto-configuration [\#113](https://github.com/bancolombia/data-mask/pull/113) ([luisgomez29](https://github.com/luisgomez29))
+- chore: mask values not longer than the visible characters [\#112](https://github.com/bancolombia/data-mask/pull/112) ([luisgomez29](https://github.com/luisgomez29))
+- chore: split inline masked values on the last separator [\#111](https://github.com/bancolombia/data-mask/pull/111) ([luisgomez29](https://github.com/luisgomez29))
+- chore: treat multi-mask separator as a literal string [\#103](https://github.com/bancolombia/data-mask/pull/103) ([luisgomez29](https://github.com/luisgomez29))
+- chore: reuse JsonMapper in JsonSerializer and JsonDeserializer [\#100](https://github.com/bancolombia/data-mask/pull/100) ([luisgomez29](https://github.com/luisgomez29))
+- feat\(deps\): update dependencies [\#93](https://github.com/bancolombia/data-mask/pull/93) ([app-toolkit-opensource-innersource[bot]](https://github.com/apps/app-toolkit-opensource-innersource))
+
 ## [v2.1.0](https://github.com/bancolombia/data-mask/tree/v2.1.0) (2026-11-05)
 
 [Full Changelog](https://github.com/bancolombia/data-mask/compare/v2.0.8...v2.1.0)
 
+**Implemented enhancements:**
+
+- Allow Mask annotation to target methods \(getter/setter\) [\#14](https://github.com/bancolombia/data-mask/issues/14)
+
 **Closed issues:**
 
 - Security report \(details removed per SECURITY.md\) [\#86](https://github.com/bancolombia/data-mask/issues/86)
-- Allow Mask annotation to target methods \(getter/setter\) [\#14](https://github.com/bancolombia/data-mask/issues/14)
 
 **Merged pull requests:**
 
