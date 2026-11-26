@@ -66,9 +66,6 @@ subprojects {
         }
     }
 
-    // TODO: Remove once it has been updated in Spring Boot
-    ext['jackson-bom.version'] = "3.1.8"
-
     test {
         useJUnitPlatform()
         testLogging {
@@ -195,4 +192,5 @@ tasks.register('generateMergedReport', JacocoReport) {
 tasks.named('wrapper') {
     gradleVersion = '9.9.2'
     distributionSha256Sum = '971fcd7150ca4ba04852c0b2ca0d2d0ab9468e14b03473eab19528809914c76b'
+    validateDistributionUrl = true
 }
