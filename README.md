@@ -22,10 +22,10 @@ sensitive data via masking with additional encrypting-decrypting.
 
 # How to use
 
-| Version | Spring Boot | Jackson | Java |
-|---------|-------------|---------|------|
-| 2.x.x   | 4.x.x       | 3.x     | 17+  |
-| 1.x.x   | 3.x.x       | 2.x     | 17+  |
+| Version | Spring Boot | Jackson | Java | Status     |
+|---------|-------------|---------|------|------------|
+| 2.x.x   | 4.x.x       | 3.x     | 17+  | Supported  |
+| 1.x.x   | 3.x.x       | 2.x     | 17+  | Deprecated |
 
 # Getting Started
 
